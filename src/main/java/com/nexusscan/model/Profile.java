@@ -4,14 +4,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Defines a scanning configuration (Profile).
- * Profiles specify how documents should be split (e.g., every N pages) 
- * and define default processing settings like rotation.
+ * A Profile is a set of rules for scanning documents.
+ * It tells the system how to split documents (e.g., after every 5 pages) 
+ * and what settings to use, like default rotation.
  */
 public class Profile {
     private String name;
-    private String splitLogic; // Numeric interval for auto-splitting documents
-    private Map<String, String> settings = new HashMap<>(); // General key-value settings (e.g., rotation=5)
+    private String splitLogic; // A rule for automatically splitting documents by page count
+    private Map<String, String> settings = new HashMap<>(); // Extra settings like default rotation
 
     public Profile(String name, String splitLogic) {
         this.name = name;

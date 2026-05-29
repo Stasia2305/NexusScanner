@@ -4,18 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a scanned document, which consists of multiple pages.
- * Documents are identified by a barcode (or auto-generated split identifier) 
- * and track their progress through the scanning and QA workflow.
+ * A Document is a collection of scanned pages.
+ * Each document is identified by a barcode and has a status to track its progress.
  */
 public class Document {
     /**
-     * Workflow status of the document.
+     * The current stage of the document in the scanning process.
      */
     public enum Status {
         IN_PROGRESS,    // Still being scanned
-        WAITING_FOR_QA, // Scanned and awaiting review
-        QA_COMPLETED    // Reviewed and exported
+        WAITING_FOR_QA, // Scanned and waiting for review
+        QA_COMPLETED    // Reviewed and ready to be exported
     }
 
     private int id;

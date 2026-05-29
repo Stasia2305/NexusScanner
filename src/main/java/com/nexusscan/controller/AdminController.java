@@ -25,8 +25,9 @@ import java.util.Map;
 import javafx.scene.layout.VBox;
 
 /**
- * Controller for the Administrative dashboard.
- * Provides functionality for user management, profile creation, and system log auditing.
+ * The AdminController manages the Administrative Dashboard.
+ * It allows administrators to create users, set up scanning profiles, 
+ * manage metadata fields, and view system logs.
  */
 public class AdminController {
     @FXML private ListView<String> userListView;
@@ -127,8 +128,8 @@ public class AdminController {
     }
 
     /**
-     * Creates a new scanning profile with optional settings (e.g., rotation).
-     * Validates split logic and triggers a settings dialog.
+     * Creates a new scanning profile (a set of rules for scanning).
+     * It also opens a dialog to define extra settings like default rotation.
      */
     @FXML
     private void onAddProfileClick() {
@@ -191,7 +192,7 @@ public class AdminController {
         if (s == null || s.isEmpty()) return map;
         String[] pairs = s.split(";");
         for (String pair : pairs) {
-            String[] kv = pair.split("=");
+            String[] kv = pair.split("=", 2);
             if (kv.length == 2) {
                 map.put(kv[0].trim(), kv[1].trim());
             }
@@ -200,8 +201,8 @@ public class AdminController {
     }
 
     /**
-     * Maps a selected profile to a selected user.
-     * Users can only use profiles that have been explicitly assigned to them.
+     * Connects a scanning profile to a specific user.
+     * Users can only see and use profiles that have been assigned to them by an admin.
      */
     @FXML
     private void onAssignProfileClick() {
@@ -253,5 +254,8 @@ public class AdminController {
         Stage stage = (Stage) userListView.getScene().getWindow();
         stage.setScene(scene);
         stage.setTitle("Login");
+        stage.setMaximized(false);
+        stage.setResizable(false);
+        stage.centerOnScreen();
     }
 }

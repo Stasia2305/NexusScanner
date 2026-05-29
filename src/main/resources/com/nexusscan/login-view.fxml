@@ -10,7 +10,8 @@
 
 <VBox alignment="CENTER" spacing="20.0" xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.nexusscan.controller.LoginController"
-      style="-fx-background-color: #f0f2f5;">
+      style="-fx-background-color: #f0f2f5;"
+      prefWidth="500" prefHeight="450">
     <stylesheets>
         <URL value="@style.css" />
     </stylesheets>

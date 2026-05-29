@@ -14,8 +14,9 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 /**
- * Controller for the Login view.
- * Handles user authentication and redirects to the appropriate dashboard based on user role.
+ * The LoginController handles the login screen.
+ * It checks the username and password and sends the user to the correct dashboard 
+ * depending on whether they are an Admin or a regular User.
  */
 public class LoginController {
     @FXML
@@ -53,6 +54,8 @@ public class LoginController {
             Stage stage = (Stage) usernameField.getScene().getWindow();
             stage.setScene(scene);
             stage.setTitle(user.getRole() == User.Role.ADMIN ? "Admin Dashboard" : "User Dashboard");
+            stage.setResizable(true);
+            stage.setMaximized(true);
         } catch (IOException e) {
             e.printStackTrace();
             errorLabel.setText("Error loading dashboard");

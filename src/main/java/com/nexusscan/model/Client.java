@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents the top-level entity in the organizational hierarchy.
- * A client owns multiple archives.
+ * A Client is the top-level entity, such as a company or organization.
+ * Each client can have multiple archives.
  */
 public class Client {
     private int id;

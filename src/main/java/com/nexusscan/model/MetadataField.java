@@ -1,8 +1,8 @@
 package com.nexusscan.model;
 
 /**
- * Defines a custom metadata field that users must populate during scanning.
- * Fields are created by admins and appear in the metadata entry dialog.
+ * A MetadataField is a piece of information (like a "Case ID" or "Date") 
+ * that users must fill in when scanning documents.
  */
 public class MetadataField {
     private int id;

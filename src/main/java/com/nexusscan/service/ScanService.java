@@ -3,11 +3,11 @@ package com.nexusscan.service;
 import java.util.Random;
 
 /**
- * Service simulating a hardware scanner.
- * In a production environment, this would interface with TWAIN or WIA drivers.
+ * The ScanService simulates a real paper scanner.
+ * In a real-world scenario, this would talk to actual scanner hardware (using TWAIN or WIA).
  */
 public class ScanService {
-    private static ScanService instance;
+    private static ScanService instance; // The single copy of ScanService used by the whole app
     private Random random = new Random();
 
     /**
@@ -39,8 +39,8 @@ public class ScanService {
     }
 
     /**
-     * Simulates a scan. Has a 10% chance to return a barcode document.
-     * Otherwise returns a placeholder image from a public API.
+     * Simulates scanning a single sheet of paper.
+     * It has a small chance of "finding" a barcode, which triggers a document split.
      */
     public ScanResult scan() {
         boolean isBarcode = random.nextInt(10) == 0; // 10% chance

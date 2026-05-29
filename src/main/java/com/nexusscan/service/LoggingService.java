@@ -7,15 +7,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Singleton service for system auditing and logging.
- * Persists user actions and system events to the SQLite database for traceability.
+ * The LoggingService acts like a "journal" that records everything that happens in the app.
+ * It saves user actions and system events to the database so they can be checked later.
  */
 public class LoggingService {
-    private static LoggingService instance;
+    private static LoggingService instance; // The single copy of LoggingService used by the whole app
     private List<LogEntry> logs = new ArrayList<>();
 
     /**
-     * Data structure for a single audit log entry.
+     * A single entry in the journal, containing what happened, who did it, and when.
      */
     public static class LogEntry {
         private String action;
@@ -44,8 +44,8 @@ public class LoggingService {
     }
 
     /**
-     * Records a system action performed by a user.
-     * Logs to standard output, internal list, and the persistent database.
+     * Records an action performed by a user.
+     * It prints the log to the console, adds it to the list, and saves it to the database.
      */
     public void log(String action, String user) {
         LogEntry entry = new LogEntry(action, user);

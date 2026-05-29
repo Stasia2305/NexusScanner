@@ -8,16 +8,18 @@ import javafx.stage.Stage;
 import java.io.IOException;
 
 /**
- * Main application class for NexusScan.
- * Initializes the JavaFX stage and loads the initial login view.
+ * The NexusScanApplication class is responsible for setting up the main window.
+ * It starts the app and opens the login screen for the user.
  */
 public class NexusScanApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(NexusScanApplication.class.getResource("login-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 400, 300);
+        Scene scene = new Scene(fxmlLoader.load());
         stage.setTitle("NexusScan - Login");
         stage.setScene(scene);
+        stage.setResizable(false);
+        stage.centerOnScreen();
         stage.show();
     }
 

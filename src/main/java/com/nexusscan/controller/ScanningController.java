@@ -30,8 +30,9 @@ import java.util.Optional;
 import javafx.scene.layout.GridPane;
 
 /**
- * Controller for the main scanning workspace.
- * Manages the scanning session, document tree visualization, image manipulation, and database persistence.
+ * The ScanningController handles the main scanning workspace where users process documents.
+ * It manages the scanning process, organizes scanned pages into documents, allows for 
+ * image rotation, metadata entry, and eventually saving everything to the database.
  */
 public class ScanningController {
     @FXML private Label profileLabel;
@@ -52,7 +53,8 @@ public class ScanningController {
     private String metadataStr = "";
 
     /**
-     * Initializes the scanning session with the selected profile and box identifier.
+     * Prepares the scanning screen for a new session.
+     * Sets the profile being used and the box ID being scanned.
      */
     public void setSession(Profile profile, String boxId) {
         this.currentProfile = profile;
@@ -68,7 +70,11 @@ public class ScanningController {
     }
 
     /**
-     * Configures keyboard shortcuts for fast operation (F1 for Scan, F12 for Export, etc.).
+     * Sets up keyboard shortcuts to speed up work.
+     * F1: Start Scan
+     * F12: Export Session
+     * L/R: Rotate image Left/Right
+     * Arrow Keys: Navigate between pages
      */
     private void setupShortcuts() {
         Scene scene = profileLabel.getScene();
@@ -103,7 +109,7 @@ public class ScanningController {
 
     @FXML
     public void initialize() {
-        // Custom cell factory for TreeView to style Documents and Pages differently
+        // Define how documents and pages look in the sidebar list (TreeView)
         fileTreeView.setCellFactory(tv -> new TreeCell<>() {
             @Override
             protected void updateItem(Object item, boolean empty) {
@@ -113,17 +119,19 @@ public class ScanningController {
                     setGraphic(null);
                     setStyle(""); 
                 } else if (item instanceof Document) {
+                    // Documents are shown in bold blue text
                     Document doc = (Document) item;
                     setText("Document: " + doc.getBarcode() + (isQAMode ? " [" + doc.getStatus() + "]" : ""));
                     setStyle("-fx-text-fill: blue; -fx-font-weight: bold;");
                 } else if (item instanceof Page) {
+                    // Pages are shown in brown text
                     setText("Page: " + ((Page) item).getPageNumber());
                     setStyle("-fx-text-fill: brown;");
                 }
             }
         });
 
-        // Update image display when a page is selected in the tree
+        // Show the image when a page is clicked in the list
         fileTreeView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null && newVal.getValue() instanceof Page) {
                 displayFile((Page) newVal.getValue());
@@ -133,13 +141,17 @@ public class ScanningController {
         });
     }
 
+    /**
+     * Clears the image viewer when nothing is selected.
+     */
     private void clearDisplay() {
         currentFile = null;
         fileImageView.setImage(null);
     }
 
     /**
-     * Triggers the scanning process. Handles barcode detection and profile-based auto-splitting.
+     * Starts the scanning process. 
+     * Handles splitting documents based on barcodes or a set number of pages.
      */
     @FXML
     private void onScanClick() {
@@ -194,7 +206,8 @@ public class ScanningController {
     }
 
     /**
-     * Processes a successfully scanned page, applying default rotations and metadata.
+     * Handles the data for a single scanned page.
+     * Applies rotation settings and adds it to the current document.
      */
     private void processScannedPage(ScanService.ScanResult result) {
         totalScans++;
@@ -202,27 +215,30 @@ public class ScanningController {
         
         Page page = new Page(totalScans, totalScans, result.getImagePath());
         
-        // Apply initial rotation from profile settings
+        // Use the rotation from the profile settings as the starting point
         double initialRotation = globalRotation;
         String profileRotation = currentProfile.getSetting("rotation", null);
         if (profileRotation != null) {
             try {
                 initialRotation += Double.parseDouble(profileRotation);
             } catch (NumberFormatException e) {
-                // Ignore invalid setting
+                // Ignore if the setting is not a valid number
             }
         }
         
         page.setRotation(initialRotation);
         page.setImageData(result.getData());
         
-        // Ensure we have at least one document to add the page to
+        // Create a document if one doesn't exist yet
         if (documents.isEmpty()) documents.add(new Document(1, "START"));
         documents.get(documents.size() - 1).addPage(page);
         
         LoggingService.getInstance().log("User scanned page: " + totalScans, AppState.getInstance().getCurrentUsernameSafe());
     }
 
+    /**
+     * Opens a dialog for the user to enter metadata (like Case ID or Client Name).
+     */
     @FXML
     private void onMetadataClick() {
         List<MetadataField> fields = AppState.getInstance().getMetadataFields();
@@ -273,17 +289,23 @@ public class ScanningController {
         });
     }
 
+    /**
+     * Converts a metadata string (key=value;key=value) into a Map.
+     */
     private Map<String, String> parseMetadata(String meta) {
         Map<String, String> map = new HashMap<>();
         if (meta == null || meta.isEmpty()) return map;
         String[] pairs = meta.split(";");
         for (String pair : pairs) {
-            String[] kv = pair.split("=");
+            String[] kv = pair.split("=", 2);
             if (kv.length == 2) map.put(kv[0], kv[1]);
         }
         return map;
     }
 
+    /**
+     * Converts a Map of metadata into a single string (key=value;key=value).
+     */
     private String serializeMetadata(Map<String, String> map) {
         StringBuilder sb = new StringBuilder();
         map.forEach((k, v) -> sb.append(k).append("=").append(v).append(";"));
@@ -291,7 +313,8 @@ public class ScanningController {
     }
 
     /**
-     * Toggles Quality Assurance (QA) mode, allowing review of scanned documents.
+     * Switches between Scanning mode and Quality Assurance (QA) mode.
+     * QA mode allows reviewing documents before they are finalized.
      */
     @FXML
     private void onQAModeClick() {
@@ -308,6 +331,9 @@ public class ScanningController {
         refreshTreeView();
     }
 
+    /**
+     * Rebuilds the sidebar list (TreeView) to reflect the current documents and pages.
+     */
     private void refreshTreeView() {
         TreeItem<Object> root = new TreeItem<>("Root");
         for (Document doc : documents) {
@@ -322,6 +348,9 @@ public class ScanningController {
         fileTreeView.setShowRoot(false);
     }
 
+    /**
+     * Highlights a specific page in the sidebar list.
+     */
     private void selectFileInTreeView(Page file) {
         for (TreeItem<Object> docItem : fileTreeView.getRoot().getChildren()) {
             for (TreeItem<Object> fileItem : docItem.getChildren()) {
@@ -333,6 +362,9 @@ public class ScanningController {
         }
     }
 
+    /**
+     * Displays the scanned image of a page in the viewer.
+     */
     private void displayFile(Page file) {
         currentFile = file;
         Image image = new Image(file.getImagePath(), true);
@@ -340,6 +372,9 @@ public class ScanningController {
         fileImageView.setRotate(file.getRotation());
     }
 
+    /**
+     * Rotates the current page 90 degrees to the left.
+     */
     @FXML private void onRotateLeftClick() { 
         if (currentFile != null) { 
             currentFile.setRotation(currentFile.getRotation() - 90); 
@@ -347,6 +382,9 @@ public class ScanningController {
         } 
     }
     
+    /**
+     * Rotates the current page 90 degrees to the right.
+     */
     @FXML private void onRotateRightClick() { 
         if (currentFile != null) { 
             currentFile.setRotation(currentFile.getRotation() + 90); 
@@ -355,7 +393,7 @@ public class ScanningController {
     }
 
     /**
-     * Reorders a page by moving it up within its parent document in the TreeView.
+     * Moves the selected page up by one position in the document.
      */
     @FXML
     private void onMoveUpClick() {
@@ -375,7 +413,7 @@ public class ScanningController {
     }
 
     /**
-     * Reorders a page by moving it down within its parent document in the TreeView.
+     * Moves the selected page down by one position in the document.
      */
     @FXML
     private void onMoveDownClick() {
@@ -395,7 +433,7 @@ public class ScanningController {
     }
 
     /**
-     * Moves a selected page into the subsequent document in the tree.
+     * Moves the selected page into the next document in the list.
      */
     @FXML
     private void onMoveDocClick() {
@@ -418,8 +456,8 @@ public class ScanningController {
     }
 
     /**
-     * Syncs the internal 'documents' list with the current visual state of the TreeView.
-     * This is called after any drag-and-drop or reordering operation.
+     * Synchronizes the internal list of documents with what's currently shown in the sidebar list.
+     * This ensures that any reordering done by the user is correctly saved.
      */
     private void updateInternalModelFromTree() {
         TreeItem<Object> selectedItem = fileTreeView.getSelectionModel().getSelectedItem();
@@ -462,6 +500,9 @@ public class ScanningController {
         }
     }
 
+    /**
+     * Selects the previous page in the list.
+     */
     @FXML
     private void onPrevClick() {
         List<Page> allFiles = getAllFiles();
@@ -471,6 +512,9 @@ public class ScanningController {
         }
     }
 
+    /**
+     * Selects the next page in the list.
+     */
     @FXML
     private void onNextClick() {
         List<Page> allFiles = getAllFiles();
@@ -480,6 +524,9 @@ public class ScanningController {
         }
     }
 
+    /**
+     * Gets a flat list of all pages across all documents.
+     */
     private List<Page> getAllFiles() {
         List<Page> allFiles = new ArrayList<>();
         for (Document doc : documents) {
@@ -488,6 +535,9 @@ public class ScanningController {
         return allFiles;
     }
 
+    /**
+     * Opens a settings dialog to set a global rotation for all pages in this box.
+     */
     @FXML
     private void onSettingsClick() {
         ChoiceDialog<Double> dialog = new ChoiceDialog<>(globalRotation, 0.0, 90.0, 180.0, 270.0);
@@ -496,7 +546,7 @@ public class ScanningController {
         dialog.setContentText("Rotation:");
         dialog.showAndWait().ifPresent(rot -> {
             globalRotation = rot;
-            // P2 Fix: Apply to all existing files
+            // Apply the new rotation to every page already scanned
             for (Document doc : documents) {
                 for (Page f : doc.getPages()) {
                     f.setRotation(rot);
@@ -508,12 +558,17 @@ public class ScanningController {
     }
 
     /**
-     * Saves the current scanning session to the database and marks documents as QA completed.
+     * Saves the entire scanning session to the database.
+     * All documents are marked as "QA Completed" during this process.
      */
     @FXML
     private void onExportClick() {
+        if (getAllFiles().isEmpty()) {
+            new Alert(Alert.AlertType.WARNING, "Cannot export an empty session. Please scan pages first.").show();
+            return;
+        }
         try {
-            // P1 Fix: Update status BEFORE saving to DB
+            // Mark every document that has pages as ready for finalization
             for (Document doc : documents) {
                 if (!doc.getPages().isEmpty()) {
                     doc.setStatus(Document.Status.QA_COMPLETED);
@@ -531,8 +586,8 @@ public class ScanningController {
     }
 
     /**
-     * Persists the entire hierarchy (Client, Archive, Box, Case, Document, Page) to SQLite.
-     * Uses transactions to ensure data integrity.
+     * Saves the full hierarchy (Client -> Archive -> Box -> Case -> Document -> Page) to the database.
+     * Uses a transaction to make sure that either everything is saved or nothing is.
      */
     private void saveToDatabase() throws SQLException {
         DatabaseService db = DatabaseService.getInstance();
@@ -646,6 +701,10 @@ public class ScanningController {
         return count;
     }
 
+    /**
+     * Logs out the current user and returns to the login screen.
+     * Warns the user if there is unsaved work.
+     */
     @FXML
     private void onLogoutClick() throws IOException {
         if (!documents.isEmpty() && totalScans > 0) {
@@ -670,5 +729,8 @@ public class ScanningController {
         Stage stage = (Stage) profileLabel.getScene().getWindow();
         stage.setScene(scene);
         stage.setTitle("Login");
+        stage.setMaximized(false);
+        stage.setResizable(false);
+        stage.centerOnScreen();
     }
 }

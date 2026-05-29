@@ -14,9 +14,8 @@ import javafx.util.StringConverter;
 import java.io.IOException;
 
 /**
- * Controller for the regular User dashboard.
- * Allows users to select an assigned scanning profile and input a box identifier 
- * before starting a scanning session.
+ * The UserController manages the dashboard for regular users.
+ * It allows users to choose a scanning profile and enter a Box ID before they start scanning.
  */
 public class UserController {
     @FXML private ComboBox<Profile> profileComboBox;
@@ -43,8 +42,7 @@ public class UserController {
     }
 
     /**
-     * Initializes a scanning session by passing the selected profile and box ID 
-     * to the ScanningController.
+     * Opens the scanning workspace using the selected profile and Box ID.
      */
     @FXML
     private void onStartScanningClick() throws IOException {
@@ -62,6 +60,12 @@ public class UserController {
             stage.setScene(scene);
             stage.setTitle("Scanning - " + profile.getName() + " - " + boxId);
             stage.setMaximized(true);
+        } else {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.WARNING);
+            alert.setTitle("Missing Information");
+            alert.setHeaderText(null);
+            alert.setContentText("Please select a scanning profile and enter a Box ID.");
+            alert.showAndWait();
         }
     }
 
@@ -73,5 +77,8 @@ public class UserController {
         Stage stage = (Stage) boxIdField.getScene().getWindow();
         stage.setScene(scene);
         stage.setTitle("Login");
+        stage.setMaximized(false);
+        stage.setResizable(false);
+        stage.centerOnScreen();
     }
 }

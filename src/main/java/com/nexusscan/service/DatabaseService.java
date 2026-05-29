@@ -3,11 +3,11 @@ package com.nexusscan.service;
 import java.sql.*;
 
 /**
- * Singleton service for managing the SQLite database connection and schema.
- * Handles table creation, migrations, and provides access to the connection.
+ * The DatabaseService is responsible for managing the connection to the database.
+ * It creates the necessary tables and makes sure the database structure is up to date.
  */
 public class DatabaseService {
-    private static DatabaseService instance;
+    private static DatabaseService instance; // The single copy of DatabaseService used by the whole app
     private Connection connection;
 
     private DatabaseService() {
@@ -29,8 +29,8 @@ public class DatabaseService {
     }
 
     /**
-     * Initializes the database schema. 
-     * Creates all necessary tables for the hierarchy: Clients, Archives, Boxes, Cases, Documents, and Pages.
+     * Sets up the database tables if they don't already exist.
+     * This creates the structure for Clients, Archives, Boxes, Cases, Documents, and Pages.
      */
     private void createTables() throws SQLException {
         if (connection == null) throw new SQLException("Connection is null");
@@ -60,7 +60,8 @@ public class DatabaseService {
     }
 
     /**
-     * Utility for database migrations. Adds a column to an existing table if it doesn't already exist.
+     * A helper method to add a new column to an existing table if it's missing.
+     * This is useful for updating the database structure without losing data.
      */
     private void ensureColumnExists(String tableName, String columnName, String columnType) {
         try (Statement stmt = connection.createStatement()) {

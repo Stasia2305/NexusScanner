@@ -1,15 +1,15 @@
 package com.nexusscan.model;
 
 /**
- * Represents a single scanned page within a document.
- * Stores image data (as byte array for BLOB storage) and display attributes like rotation.
+ * A Page represents a single scanned sheet of paper within a document.
+ * It stores the image file path, how much it should be rotated, and the actual image data.
  */
 public class Page {
     private int id;
     private int pageNumber;
-    private String imagePath; // Reference path for local preview
-    private double rotation;   // Display rotation in degrees
-    private byte[] imageData; // Raw image bytes for database storage
+    private String imagePath; // Where the image is stored on the computer
+    private double rotation;   // How many degrees the image should be turned
+    private byte[] imageData; // The actual image data saved in the database
 
     public Page(int id, int pageNumber, String imagePath) {
         this.id = id;

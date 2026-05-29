@@ -1,15 +1,15 @@
 package com.nexusscan.model;
 
 /**
- * Represents a system user with authentication credentials and a specific role.
+ * A User is a person who can log into the system.
  */
 public class User {
     /**
-     * Authorization roles defining user permissions.
+     * Different levels of access for users.
      */
     public enum Role {
-        ADMIN, // Access to administrative tools and profile management
-        USER   // Access to scanning workspace
+        ADMIN, // Can manage profiles and users
+        USER   // Can only scan and review documents
     }
 
     private String username;

@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a physical container (Box) holding multiple scanning cases.
- * Part of the organization hierarchy: Client -> Archive -> Box -> Case.
+ * A Box is a physical container that holds multiple scanning cases.
+ * It is part of the organization: Client -> Archive -> Box -> Case.
  */
 public class Box {
     private int id;

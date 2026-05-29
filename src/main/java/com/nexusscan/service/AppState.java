@@ -15,12 +15,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Global application state manager.
- * Stores information about the current user, available profiles, and metadata fields.
- * Loads configuration from the database on initialization.
+ * The AppState is like the "memory" of the application.
+ * It keeps track of the current user, available scanning profiles, and metadata fields.
+ * It also handles saving and loading these settings from the database.
  */
 public class AppState {
-    private static AppState instance;
+    private static AppState instance; // The single copy of AppState used by the whole app
     private List<User> users = new ArrayList<>();
     private List<Profile> allProfiles = new ArrayList<>();
     private List<MetadataField> metadataFields = new ArrayList<>();
@@ -36,7 +36,7 @@ public class AppState {
     }
 
     /**
-     * Loads system users, profiles, and metadata field definitions from the SQLite database.
+     * Fills the AppState with users, profiles, and metadata fields stored in the database.
      */
     private void loadFromDatabase() {
         try {
@@ -66,7 +66,10 @@ public class AppState {
                     String username = rs.getString("username");
                     Profile p = profileMap.get(rs.getInt("profile_id"));
                     if (p != null) {
-                        userProfiles.computeIfAbsent(username, k -> new ArrayList<>()).add(p);
+                        List<Profile> profiles = userProfiles.computeIfAbsent(username, k -> new ArrayList<>());
+                        if (!profiles.contains(p)) {
+                            profiles.add(p);
+                        }
                     }
                 }
             }
@@ -126,7 +129,6 @@ public class AppState {
     }
 
     public void addUser(User user) {
-        users.add(user);
         try {
             DatabaseService db = DatabaseService.getInstance();
             try (PreparedStatement pstmt = db.getConnection().prepareStatement("INSERT OR REPLACE INTO users (username, password, role) VALUES (?, ?, ?)")) {
@@ -134,6 +136,8 @@ public class AppState {
                 pstmt.setString(2, user.getPassword());
                 pstmt.setString(3, user.getRole().name());
                 pstmt.executeUpdate();
+                users.removeIf(u -> u.getUsername().equals(user.getUsername()));
+                users.add(user);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -176,7 +180,6 @@ public class AppState {
         if (allProfiles.stream().anyMatch(p -> p.getName().equalsIgnoreCase(profile.getName()))) {
             return false;
         }
-        allProfiles.add(profile);
         try {
             DatabaseService db = DatabaseService.getInstance();
             try (PreparedStatement pstmt = db.getConnection().prepareStatement("INSERT INTO profiles (name, split_logic, settings) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
@@ -184,6 +187,7 @@ public class AppState {
                 pstmt.setString(2, profile.getSplitLogic());
                 pstmt.setString(3, serializeSettings(profile.getSettings()));
                 pstmt.executeUpdate();
+                allProfiles.add(profile);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -204,7 +208,7 @@ public class AppState {
         if (s == null || s.isEmpty()) return map;
         String[] pairs = s.split(";");
         for (String pair : pairs) {
-            String[] kv = pair.split("=");
+            String[] kv = pair.split("=", 2);
             if (kv.length == 2) {
                 map.put(kv[0].trim(), kv[1].trim());
             }
@@ -213,7 +217,6 @@ public class AppState {
     }
 
     public void assignProfileToUser(String username, Profile profile) {
-        userProfiles.computeIfAbsent(username, k -> new ArrayList<>()).add(profile);
         try {
             DatabaseService db = DatabaseService.getInstance();
             // Get profile ID first
@@ -229,6 +232,7 @@ public class AppState {
                     pstmt.setString(1, username);
                     pstmt.setInt(2, profileId);
                     pstmt.executeUpdate();
+                    userProfiles.computeIfAbsent(username, k -> new ArrayList<>()).add(profile);
                 }
             }
         } catch (SQLException e) {

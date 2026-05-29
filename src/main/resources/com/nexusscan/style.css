@@ -1,3 +1,4 @@
+/* General settings for the whole application */
 .root {
     -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
     -fx-base: #f4f4f4;
@@ -6,6 +7,7 @@
     -fx-focus-color: #2196f3;
 }
 
+/* Big titles at the top of screens */
 .header-label {
     -fx-font-size: 24px;
     -fx-font-weight: bold;
@@ -13,12 +15,14 @@
     -fx-padding: 0 0 10 0;
 }
 
+/* Smaller titles used for sections */
 .subheader-label {
     -fx-font-size: 16px;
     -fx-font-weight: bold;
     -fx-text-fill: #555555;
 }
 
+/* A white box with a shadow to group elements together */
 .card {
     -fx-background-color: white;
     -fx-background-radius: 5;
@@ -26,17 +30,20 @@
     -fx-padding: 15;
 }
 
+/* Styling for text boxes and dropdown menus */
 .text-field, .password-field, .combo-box {
     -fx-background-radius: 3;
     -fx-padding: 8;
 }
 
+/* Base style for all buttons */
 .button {
     -fx-cursor: hand;
     -fx-padding: 8 15 8 15;
     -fx-background-radius: 3;
 }
 
+/* Standard blue button for main actions */
 .button-primary {
     -fx-background-color: #2196f3;
     -fx-text-fill: white;
@@ -46,6 +53,7 @@
     -fx-background-color: #1976d2;
 }
 
+/* Red button for dangerous actions like deleting */
 .button-danger {
     -fx-background-color: #f44336;
     -fx-text-fill: white;
@@ -55,21 +63,25 @@
     -fx-background-color: #d32f2f;
 }
 
+/* Boxes that show lists of items */
 .list-view, .tree-view {
     -fx-background-radius: 5;
     -fx-border-color: #dddddd;
     -fx-border-radius: 5;
 }
 
+/* Styling for the tabs at the top of the admin screen */
 .tab-pane .tab-header-area .tab-header-background {
     -fx-background-color: #eeeeee;
 }
 
+/* The dark bar at the bottom of the screen */
 .status-bar {
     -fx-background-color: #333333;
     -fx-padding: 5 10 5 10;
 }
 
+/* Text shown in the status bar */
 .status-label {
     -fx-text-fill: white;
     -fx-font-size: 12px;

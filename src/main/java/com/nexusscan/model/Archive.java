@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a logical grouping of physical boxes belonging to a client.
- * Part of the organization hierarchy: Client -> Archive -> Box.
+ * An Archive is a collection of boxes that belong to a specific client.
+ * It helps organize data in this order: Client -> Archive -> Box.
  */
 public class Archive {
     private int id;
