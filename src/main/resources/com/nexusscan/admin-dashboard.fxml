@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import java.net.URL?>
+
+<VBox spacing="20.0" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.nexusscan.controller.AdminController"
+      style="-fx-background-color: #f8f9fa;">
+    <stylesheets>
+        <URL value="@style.css" />
+    </stylesheets>
+    
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="20">
+        <Label text="Admin Control Center" styleClass="header-label" HBox.hgrow="ALWAYS"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Logout" onAction="#onLogoutClick" styleClass="button-danger"/>
+    </HBox>
+    
+    <TabPane VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;">
+        <Tab text="Users &amp; Profiles" closable="false">
+            <HBox spacing="20" style="-fx-padding: 20 0 0 0;">
+                <VBox spacing="15" HBox.hgrow="ALWAYS" styleClass="card">
+                    <Label text="User Management" styleClass="subheader-label"/>
+                    <ListView fx:id="userListView" VBox.vgrow="ALWAYS"/>
+                    <GridPane hgap="10" vgap="10">
+                        <TextField fx:id="newUsernameField" promptText="Username" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                        <PasswordField fx:id="newPasswordField" promptText="Password" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                        <ComboBox fx:id="roleComboBox" promptText="Role" GridPane.columnIndex="0" GridPane.rowIndex="1" maxWidth="Infinity"/>
+                        <HBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                            <Button text="Add User" onAction="#onAddUserClick" styleClass="button-primary" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                            <Button text="Delete" onAction="#onDeleteUserClick" styleClass="button-danger"/>
+                        </HBox>
+                    </GridPane>
+                </VBox>
+                
+                <VBox spacing="15" HBox.hgrow="ALWAYS" styleClass="card">
+                    <Label text="Profile Configuration" styleClass="subheader-label"/>
+                    <ListView fx:id="profileListView" VBox.vgrow="ALWAYS"/>
+                    <VBox spacing="10">
+                        <HBox spacing="10">
+                            <TextField fx:id="profileNameField" promptText="Profile Name" HBox.hgrow="ALWAYS"/>
+                            <TextField fx:id="splitLogicField" promptText="Split Logic" HBox.hgrow="ALWAYS"/>
+                        </HBox>
+                        <HBox spacing="10">
+                            <Button text="Create Profile" onAction="#onAddProfileClick" styleClass="button-primary" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                            <Button text="Assign to Selected User" onAction="#onAssignProfileClick" maxWidth="Infinity"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </HBox>
+        </Tab>
+        
+        <Tab text="System Metadata &amp; Logs" closable="false">
+            <VBox spacing="20" style="-fx-padding: 20 0 0 0;">
+                <VBox spacing="15" styleClass="card">
+                    <Label text="Metadata Definitions" styleClass="subheader-label"/>
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <ListView fx:id="metadataFieldListView" HBox.hgrow="ALWAYS" maxHeight="150"/>
+                        <VBox spacing="10" prefWidth="200">
+                            <TextField fx:id="newMetadataFieldName" promptText="Field Name"/>
+                            <Button text="Add Field" onAction="#onAddMetadataFieldClick" styleClass="button-primary" maxWidth="Infinity"/>
+                            <Button text="Remove Field" onAction="#onDeleteMetadataFieldClick" styleClass="button-danger" maxWidth="Infinity"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+                
+                <VBox spacing="15" VBox.vgrow="ALWAYS" styleClass="card">
+                    <HBox alignment="CENTER_LEFT">
+                        <Label text="System Audit Logs" styleClass="subheader-label" HBox.hgrow="ALWAYS"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button text="Refresh Logs" onAction="#onRefreshLogsClick"/>
+                    </HBox>
+                    <ListView fx:id="systemLogListView" VBox.vgrow="ALWAYS"/>
+                </VBox>
+            </VBox>
+        </Tab>
+    </TabPane>
+</VBox>

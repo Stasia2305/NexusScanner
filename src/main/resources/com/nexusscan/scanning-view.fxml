@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import java.net.URL?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.nexusscan.controller.ScanningController"
+            style="-fx-background-color: #f0f2f5;">
+    <stylesheets>
+        <URL value="@style.css" />
+    </stylesheets>
+    
+    <top>
+        <VBox>
+            <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-background-color: white; -fx-padding: 10 20 10 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 0, 0, 0, 1);">
+                <VBox>
+                    <Label fx:id="profileLabel" text="Profile: Loading..." style="-fx-font-weight: bold; -fx-text-fill: #2196f3;"/>
+                    <Label fx:id="boxLabel" text="Box: Loading..." style="-fx-font-size: 11px; -fx-text-fill: #666;"/>
+                </VBox>
+                <Separator orientation="VERTICAL" />
+                <Label fx:id="totalScansLabel" text="Total Scans: 0" style="-fx-font-weight: bold;"/>
+                
+                <Region HBox.hgrow="ALWAYS"/>
+                
+                <HBox spacing="10">
+                    <Button fx:id="scanButton" text="Scan (F1)" onAction="#onScanClick" styleClass="button-primary"/>
+                    <Button text="Metadata" onAction="#onMetadataClick"/>
+                    <Button fx:id="qaButton" text="QA Mode" onAction="#onQAModeClick" style="-fx-background-color: #ff9800; -fx-text-fill: white;"/>
+                    <Separator orientation="VERTICAL" />
+                    <Button text="Settings" onAction="#onSettingsClick"/>
+                    <Button text="Save &amp; Export (F12)" onAction="#onExportClick" styleClass="button-primary" style="-fx-background-color: #4caf50;"/>
+                    <Button text="Exit" onAction="#onLogoutClick" styleClass="button-danger"/>
+                </HBox>
+            </HBox>
+        </VBox>
+    </top>
+    
+    <left>
+        <VBox spacing="10" style="-fx-padding: 15; -fx-pref-width: 280; -fx-background-color: white; -fx-border-color: #ddd; -fx-border-width: 0 1 0 0;">
+            <Label text="Document Tree" styleClass="subheader-label"/>
+            <TreeView fx:id="fileTreeView" VBox.vgrow="ALWAYS"/>
+            <HBox spacing="10" alignment="CENTER">
+                <Button text="↑ Move" onAction="#onMoveUpClick" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                <Button text="↓ Move" onAction="#onMoveDownClick" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+            </HBox>
+            <Button text="Move to Next Doc" onAction="#onMoveDocClick" maxWidth="Infinity"/>
+        </VBox>
+    </left>
+    
+    <center>
+        <VBox alignment="CENTER" spacing="15" style="-fx-padding: 20;">
+            <StackPane VBox.vgrow="ALWAYS" style="-fx-background-color: #e0e0e0; -fx-background-radius: 5; -fx-border-color: #ccc; -fx-border-radius: 5; -fx-border-width: 1;">
+                <ImageView fx:id="fileImageView" preserveRatio="true"/>
+            </StackPane>
+            
+            <HBox spacing="15" alignment="CENTER" styleClass="card">
+                <Button text="Rotate Left (L)" onAction="#onRotateLeftClick"/>
+                <Separator orientation="VERTICAL" />
+                <Button text="Previous (←)" onAction="#onPrevClick"/>
+                <Button text="Next (→)" onAction="#onNextClick" styleClass="button-primary"/>
+                <Separator orientation="VERTICAL" />
+                <Button text="Rotate Right (R)" onAction="#onRotateRightClick"/>
+            </HBox>
+        </VBox>
+    </center>
+    
+    <bottom>
+        <HBox spacing="20" styleClass="status-bar">
+            <Label text="Legend:" styleClass="status-label" style="-fx-font-weight: bold;"/>
+            <HBox spacing="5" alignment="CENTER">
+                <Region style="-fx-background-color: red; -fx-pref-width: 10; -fx-pref-height: 10; -fx-background-radius: 5;"/>
+                <Label text="Profile" styleClass="status-label"/>
+            </HBox>
+            <HBox spacing="5" alignment="CENTER">
+                <Region style="-fx-background-color: black; -fx-pref-width: 10; -fx-pref-height: 10; -fx-background-radius: 5;"/>
+                <Label text="Box" styleClass="status-label"/>
+            </HBox>
+            <HBox spacing="5" alignment="CENTER">
+                <Region style="-fx-background-color: blue; -fx-pref-width: 10; -fx-pref-height: 10; -fx-background-radius: 5;"/>
+                <Label text="Document" styleClass="status-label"/>
+            </HBox>
+            <HBox spacing="5" alignment="CENTER">
+                <Region style="-fx-background-color: brown; -fx-pref-width: 10; -fx-pref-height: 10; -fx-background-radius: 5;"/>
+                <Label text="Page" styleClass="status-label"/>
+            </HBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="System Ready" styleClass="status-label"/>
+        </HBox>
+    </bottom>
+</BorderPane>

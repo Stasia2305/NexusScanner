@@ -1,0 +1,76 @@
+.root {
+    -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    -fx-base: #f4f4f4;
+    -fx-accent: #2196f3;
+    -fx-default-button: #2196f3;
+    -fx-focus-color: #2196f3;
+}
+
+.header-label {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+    -fx-padding: 0 0 10 0;
+}
+
+.subheader-label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #555555;
+}
+
+.card {
+    -fx-background-color: white;
+    -fx-background-radius: 5;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);
+    -fx-padding: 15;
+}
+
+.text-field, .password-field, .combo-box {
+    -fx-background-radius: 3;
+    -fx-padding: 8;
+}
+
+.button {
+    -fx-cursor: hand;
+    -fx-padding: 8 15 8 15;
+    -fx-background-radius: 3;
+}
+
+.button-primary {
+    -fx-background-color: #2196f3;
+    -fx-text-fill: white;
+}
+
+.button-primary:hover {
+    -fx-background-color: #1976d2;
+}
+
+.button-danger {
+    -fx-background-color: #f44336;
+    -fx-text-fill: white;
+}
+
+.button-danger:hover {
+    -fx-background-color: #d32f2f;
+}
+
+.list-view, .tree-view {
+    -fx-background-radius: 5;
+    -fx-border-color: #dddddd;
+    -fx-border-radius: 5;
+}
+
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: #eeeeee;
+}
+
+.status-bar {
+    -fx-background-color: #333333;
+    -fx-padding: 5 10 5 10;
+}
+
+.status-label {
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+}
