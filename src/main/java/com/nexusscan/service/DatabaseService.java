@@ -21,6 +21,10 @@ public class DatabaseService {
         }
     }
 
+    /**
+     * The getInstance method follows the Singleton pattern.
+     * It ensures that only one database connection is created and shared across the entire app.
+     */
     public static DatabaseService getInstance() {
         if (instance == null) {
             instance = new DatabaseService();
@@ -30,11 +34,12 @@ public class DatabaseService {
 
     /**
      * Sets up the database tables if they don't already exist.
-     * This creates the structure for Clients, Archives, Boxes, Cases, Documents, and Pages.
+     * This creates the structure for organizing Clients, Archives, Boxes, and other data.
      */
     private void createTables() throws SQLException {
-        if (connection == null) throw new SQLException("Connection is null");
+        if (connection == null) throw new SQLException("Connection to the database failed.");
         try (Statement stmt = connection.createStatement()) {
+            // Create core data tables
             stmt.execute("CREATE TABLE IF NOT EXISTS clients (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
             stmt.execute("CREATE TABLE IF NOT EXISTS archives (id INTEGER PRIMARY KEY AUTOINCREMENT, client_id INTEGER, name TEXT)");
             stmt.execute("CREATE TABLE IF NOT EXISTS boxes (id INTEGER PRIMARY KEY AUTOINCREMENT, archive_id INTEGER, box_id_str TEXT)");
@@ -42,20 +47,17 @@ public class DatabaseService {
             stmt.execute("CREATE TABLE IF NOT EXISTS documents (id INTEGER PRIMARY KEY AUTOINCREMENT, case_id INTEGER, barcode TEXT, status TEXT)");
             stmt.execute("CREATE TABLE IF NOT EXISTS pages (id INTEGER PRIMARY KEY AUTOINCREMENT, document_id INTEGER, page_number INTEGER, image_data BLOB, rotation REAL)");
             
-            // User table
+            // Create user management and configuration tables
             stmt.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT, role TEXT)");
-            // Profile table & assignment - P2: Added UNIQUE(name)
             stmt.execute("CREATE TABLE IF NOT EXISTS profiles (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE, split_logic TEXT, settings TEXT)");
             stmt.execute("CREATE TABLE IF NOT EXISTS user_profiles (username TEXT, profile_id INTEGER)");
             
-            // Metadata Fields CRUD for Admin - P2: Added UNIQUE(field_name)
+            // Create metadata and logging tables
             stmt.execute("CREATE TABLE IF NOT EXISTS metadata_fields (id INTEGER PRIMARY KEY AUTOINCREMENT, field_name TEXT UNIQUE)");
-            
-            // Persistent Logging System
             stmt.execute("CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, username TEXT, action TEXT)");
         }
         
-        // Ensure migration for existing databases
+        // Ensure the database is up to date by checking for missing columns
         ensureColumnExists("profiles", "settings", "TEXT");
     }
 
