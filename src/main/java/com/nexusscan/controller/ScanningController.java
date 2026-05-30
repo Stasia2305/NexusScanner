@@ -6,6 +6,8 @@ import com.nexusscan.service.LoggingService;
 import com.nexusscan.service.ScanService;
 import com.nexusscan.service.DatabaseService;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -16,6 +18,9 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -156,8 +161,30 @@ public class ScanningController {
     @FXML
     private void onScanClick() {
         if (isQAMode || currentProfile == null) return;
-        ScanService.ScanResult result = ScanService.getInstance().scan();
         
+        scanButton.setDisable(true);
+        Task<ScanService.ScanResult> scanTask = new Task<>() {
+            @Override
+            protected ScanService.ScanResult call() {
+                return ScanService.getInstance().scan();
+            }
+        };
+
+        scanTask.setOnSucceeded(e -> {
+            scanButton.setDisable(false);
+            ScanService.ScanResult result = scanTask.getValue();
+            handleScanResult(result);
+        });
+
+        scanTask.setOnFailed(e -> {
+            scanButton.setDisable(false);
+            new Alert(Alert.AlertType.ERROR, "Scanning failed: " + scanTask.getException().getMessage()).show();
+        });
+
+        new Thread(scanTask).start();
+    }
+
+    private void handleScanResult(ScanService.ScanResult result) {
         // Check for numeric split logic (e.g., split every N pages)
         boolean fixedSplitTriggered = false;
         String splitLogic = currentProfile.getSplitLogic();
@@ -298,7 +325,9 @@ public class ScanningController {
         String[] pairs = meta.split(";");
         for (String pair : pairs) {
             String[] kv = pair.split("=", 2);
-            if (kv.length == 2) map.put(kv[0], kv[1]);
+            if (kv.length == 2) {
+                map.put(unescape(kv[0].trim()), unescape(kv[1].trim()));
+            }
         }
         return map;
     }
@@ -308,8 +337,18 @@ public class ScanningController {
      */
     private String serializeMetadata(Map<String, String> map) {
         StringBuilder sb = new StringBuilder();
-        map.forEach((k, v) -> sb.append(k).append("=").append(v).append(";"));
+        map.forEach((k, v) -> sb.append(escape(k)).append("=").append(escape(v)).append(";"));
         return sb.toString();
+    }
+
+    private String escape(String s) {
+        if (s == null) return "";
+        return s.replace(";", "%3B").replace("=", "%3D");
+    }
+
+    private String unescape(String s) {
+        if (s == null) return "";
+        return s.replace("%3B", ";").replace("%3D", "=");
     }
 
     /**
@@ -364,12 +403,47 @@ public class ScanningController {
 
     /**
      * Displays the scanned image of a page in the viewer.
+     * It handles both standard web images and TIFF data from the API.
      */
     private void displayFile(Page file) {
         currentFile = file;
-        Image image = new Image(file.getImagePath(), true);
-        fileImageView.setImage(image);
-        fileImageView.setRotate(file.getRotation());
+        
+        // Prefer raw image data (like TIFFs from the API)
+        if (file.getImageData() != null && file.getImageData().length > 0) {
+            Task<Image> loadTask = new Task<>() {
+                @Override
+                protected Image call() throws IOException {
+                    try (ByteArrayInputStream bis = new ByteArrayInputStream(file.getImageData())) {
+                        BufferedImage bufferedImage = ImageIO.read(bis);
+                        if (bufferedImage != null) {
+                            return SwingFXUtils.toFXImage(bufferedImage, null);
+                        }
+                    }
+                    return new Image(file.getImagePath(), true);
+                }
+            };
+
+            loadTask.setOnSucceeded(e -> {
+                if (currentFile == file) { // Only update if still viewing the same page
+                    fileImageView.setImage(loadTask.getValue());
+                    fileImageView.setRotate(file.getRotation());
+                }
+            });
+
+            loadTask.setOnFailed(e -> {
+                if (currentFile == file) {
+                    fileImageView.setImage(new Image(file.getImagePath(), true));
+                    fileImageView.setRotate(file.getRotation());
+                }
+            });
+
+            new Thread(loadTask).start();
+        } else {
+            // No raw data, just load from the path (like the fallback picsum URLs)
+            Image image = new Image(file.getImagePath(), true);
+            fileImageView.setImage(image);
+            fileImageView.setRotate(file.getRotation());
+        }
     }
 
     /**
@@ -563,6 +637,10 @@ public class ScanningController {
      */
     @FXML
     private void onExportClick() {
+        if (scanButton.isDisable()) {
+            new Alert(Alert.AlertType.WARNING, "Please wait for the current scan to finish.").show();
+            return;
+        }
         if (getAllFiles().isEmpty()) {
             new Alert(Alert.AlertType.WARNING, "Cannot export an empty session. Please scan pages first.").show();
             return;
@@ -613,18 +691,23 @@ public class ScanningController {
 
             // P2 Fix: Deduplicate by removing existing documents/pages for this case before re-exporting
             // We find all documents for this case and delete their pages, then delete the documents
+            List<Integer> oldDocIds = new ArrayList<>();
             try (PreparedStatement pstmtGetDocs = conn.prepareStatement("SELECT id FROM documents WHERE case_id = ?")) {
                 pstmtGetDocs.setInt(1, caseId);
                 try (ResultSet rs = pstmtGetDocs.executeQuery()) {
                     while (rs.next()) {
-                        int oldDocId = rs.getInt(1);
-                        try (PreparedStatement pstmtDelPages = conn.prepareStatement("DELETE FROM pages WHERE document_id = ?")) {
-                            pstmtDelPages.setInt(1, oldDocId);
-                            pstmtDelPages.executeUpdate();
-                        }
+                        oldDocIds.add(rs.getInt(1));
                     }
                 }
             }
+            
+            try (PreparedStatement pstmtDelPages = conn.prepareStatement("DELETE FROM pages WHERE document_id = ?")) {
+                for (int oldDocId : oldDocIds) {
+                    pstmtDelPages.setInt(1, oldDocId);
+                    pstmtDelPages.executeUpdate();
+                }
+            }
+            
             try (PreparedStatement pstmtDelDocs = conn.prepareStatement("DELETE FROM documents WHERE case_id = ?")) {
                 pstmtDelDocs.setInt(1, caseId);
                 pstmtDelDocs.executeUpdate();
@@ -633,10 +716,11 @@ public class ScanningController {
             String sqlDoc = "INSERT INTO documents (case_id, barcode, status) VALUES (?, ?, ?)";
             String sqlPage = "INSERT INTO pages (document_id, page_number, image_data, rotation) VALUES (?, ?, ?, ?)";
 
-            for (Document doc : documents) {
-                if (doc.getPages().isEmpty()) continue; // Skip empty documents (P2 Fix)
+            try (PreparedStatement pstmtDoc = conn.prepareStatement(sqlDoc, Statement.RETURN_GENERATED_KEYS);
+                 PreparedStatement pstmtPage = conn.prepareStatement(sqlPage)) {
+                for (Document doc : documents) {
+                    if (doc.getPages().isEmpty()) continue; // Skip empty documents (P2 Fix)
 
-                try (PreparedStatement pstmtDoc = conn.prepareStatement(sqlDoc, Statement.RETURN_GENERATED_KEYS)) {
                     pstmtDoc.setInt(1, caseId);
                     pstmtDoc.setString(2, doc.getBarcode());
                     pstmtDoc.setString(3, doc.getStatus().name());
@@ -646,13 +730,11 @@ public class ScanningController {
                         if (rs.next()) {
                             int docId = rs.getInt(1);
                             for (Page page : doc.getPages()) {
-                                try (PreparedStatement pstmtPage = conn.prepareStatement(sqlPage)) {
-                                    pstmtPage.setInt(1, docId);
-                                    pstmtPage.setInt(2, page.getPageNumber());
-                                    pstmtPage.setBytes(3, page.getImageData()); // Save BLOB
-                                    pstmtPage.setDouble(4, page.getRotation());
-                                    pstmtPage.executeUpdate();
-                                }
+                                pstmtPage.setInt(1, docId);
+                                pstmtPage.setInt(2, page.getPageNumber());
+                                pstmtPage.setBytes(3, page.getImageData()); // Save BLOB
+                                pstmtPage.setDouble(4, page.getRotation());
+                                pstmtPage.executeUpdate();
                             }
                         }
                     }
@@ -660,9 +742,10 @@ public class ScanningController {
             }
             conn.commit();
             LoggingService.getInstance().log("Full hierarchy and pages saved to database. Metadata: " + metadataStr, AppState.getInstance().getCurrentUsernameSafe());
-        } catch (SQLException e) {
+        } catch (Exception e) {
             conn.rollback();
-            throw e;
+            if (e instanceof SQLException) throw (SQLException) e;
+            throw new RuntimeException("Transaction failed due to unexpected error", e);
         } finally {
             conn.setAutoCommit(true);
         }
@@ -707,6 +790,10 @@ public class ScanningController {
      */
     @FXML
     private void onLogoutClick() throws IOException {
+        if (scanButton.isDisable()) {
+            new Alert(Alert.AlertType.WARNING, "Please wait for the current scan to finish.").show();
+            return;
+        }
         if (!documents.isEmpty() && totalScans > 0) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setTitle("Confirm Exit");

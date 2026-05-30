@@ -2,6 +2,9 @@ module com.nexusscan {
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.web;
+    requires javafx.swing;
+    requires java.desktop;
+    requires java.net.http;
     requires java.sql;
 
     requires org.controlsfx.controls;

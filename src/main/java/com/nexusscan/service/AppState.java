@@ -41,11 +41,26 @@ public class AppState {
     private void loadFromDatabase() {
         try {
             DatabaseService db = DatabaseService.getInstance();
+            // Clear existing data to avoid duplicates if re-loading
+            users.clear();
+            allProfiles.clear();
+            metadataFields.clear();
+            userProfiles.clear();
+
             // Load Users
             try (Statement stmt = db.getConnection().createStatement();
                  ResultSet rs = stmt.executeQuery("SELECT * FROM users")) {
                 while (rs.next()) {
-                    users.add(new User(rs.getString("username"), rs.getString("password"), User.Role.valueOf(rs.getString("role"))));
+                    String roleStr = rs.getString("role");
+                    User.Role role = User.Role.USER; // Default fallback
+                    if (roleStr != null) {
+                        try {
+                            role = User.Role.valueOf(roleStr);
+                        } catch (IllegalArgumentException e) {
+                            // Keep default USER role if database has invalid data
+                        }
+                    }
+                    users.add(new User(rs.getString("username"), rs.getString("password"), role));
                 }
             }
             // Load Profiles
@@ -161,13 +176,13 @@ public class AppState {
                     pstmt.executeUpdate();
                 }
                 conn.commit();
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 conn.rollback();
                 throw e;
             } finally {
                 conn.setAutoCommit(true);
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -199,7 +214,7 @@ public class AppState {
     private String serializeSettings(Map<String, String> map) {
         if (map == null || map.isEmpty()) return "";
         StringBuilder sb = new StringBuilder();
-        map.forEach((k, v) -> sb.append(k).append("=").append(v).append(";"));
+        map.forEach((k, v) -> sb.append(escape(k)).append("=").append(escape(v)).append(";"));
         return sb.toString();
     }
 
@@ -210,10 +225,20 @@ public class AppState {
         for (String pair : pairs) {
             String[] kv = pair.split("=", 2);
             if (kv.length == 2) {
-                map.put(kv[0].trim(), kv[1].trim());
+                map.put(unescape(kv[0].trim()), unescape(kv[1].trim()));
             }
         }
         return map;
+    }
+
+    private String escape(String s) {
+        if (s == null) return "";
+        return s.replace(";", "%3B").replace("=", "%3D");
+    }
+
+    private String unescape(String s) {
+        if (s == null) return "";
+        return s.replace("%3B", ";").replace("%3D", "=");
     }
 
     public void assignProfileToUser(String username, Profile profile) {

@@ -75,7 +75,15 @@ public class AdminController {
     @FXML
     private void onDeleteUserClick() {
         String selected = userListView.getSelectionModel().getSelectedItem();
-        if (selected != null && !selected.equals("admin")) {
+        if (selected != null) {
+            if (selected.equals("admin")) {
+                new Alert(Alert.AlertType.ERROR, "Cannot delete the default admin account.").show();
+                return;
+            }
+            if (selected.equals(AppState.getInstance().getCurrentUsernameSafe())) {
+                new Alert(Alert.AlertType.ERROR, "You cannot delete your own account while logged in.").show();
+                return;
+            }
             AppState.getInstance().deleteUser(selected);
             LoggingService.getInstance().log("Admin deleted user: " + selected, AppState.getInstance().getCurrentUsernameSafe());
             refreshUserList();
