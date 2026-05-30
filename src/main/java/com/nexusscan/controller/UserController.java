@@ -1,6 +1,7 @@
 package com.nexusscan.controller;
 
 import com.nexusscan.model.Profile;
+import com.nexusscan.model.User;
 import com.nexusscan.service.AppState;
 import com.nexusscan.service.ProfileService;
 import javafx.collections.FXCollections;
@@ -10,6 +11,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
@@ -29,29 +31,45 @@ public class UserController {
 
     @FXML
     public void initialize() {
-        // Load only the profiles that the admin has assigned to this user
-        String username = AppState.getInstance().getCurrentUser().getUsername();
-        if (connectionLabel != null) {
-            connectionLabel.setText("Connected as: " + username);
-        }
         try {
-            profileComboBox.setItems(FXCollections.observableArrayList(profileService.getAccessibleProfiles(username)));
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        
-        // Use a converter to display the profile name in the dropdown
-        profileComboBox.setConverter(new StringConverter<>() {
-            @Override
-            public String toString(Profile profile) {
-                return profile == null ? "" : profile.getName();
+            // Load only the profiles that the admin has assigned to this user
+            User user = AppState.getInstance().getCurrentUser();
+            if (user == null) {
+                System.err.println("Error: No current user set in AppState");
+                return;
             }
+            
+            String username = user.getUsername();
+            if (connectionLabel != null) {
+                connectionLabel.setText("Connected as: " + username);
+            }
+            try {
+                if (profileComboBox != null) {
+                    profileComboBox.setItems(FXCollections.observableArrayList(profileService.getAccessibleProfiles(username)));
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            
+            // Use a converter to display the profile name in the dropdown
+            if (profileComboBox != null) {
+                profileComboBox.setConverter(new StringConverter<>() {
+                    @Override
+                    public String toString(Profile profile) {
+                        return profile == null ? "" : profile.getName();
+                    }
 
-            @Override
-            public Profile fromString(String s) {
-                return null;
+                    @Override
+                    public Profile fromString(String s) {
+                        return null;
+                    }
+                });
             }
-        });
+        } catch (Exception e) {
+            System.err.println("Critical error during UserController initialization:");
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     /**

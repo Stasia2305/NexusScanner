@@ -28,7 +28,8 @@ public class ProfileDAO implements IProfileDAO {
                 profiles.add(new Profile(
                         rs.getString("name"),
                         rs.getString("split_logic"),
-                        parseSettings(rs.getString("settings"))
+                        parseSettings(rs.getString("settings")),
+                        rs.getString("description")
                 ));
             }
         }
@@ -37,12 +38,13 @@ public class ProfileDAO implements IProfileDAO {
 
     @Override
     public void addProfile(Profile profile) throws SQLException {
-        String sql = "INSERT INTO profiles (name, split_logic, settings) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO profiles (name, split_logic, settings, description) VALUES (?, ?, ?, ?)";
         try (Connection conn = databaseService.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, profile.getName());
             pstmt.setString(2, profile.getSplitLogic());
             pstmt.setString(3, serializeSettings(profile.getSettings()));
+            pstmt.setString(4, profile.getDescription());
             pstmt.executeUpdate();
         }
     }
@@ -71,7 +73,8 @@ public class ProfileDAO implements IProfileDAO {
                     profiles.add(new Profile(
                             rs.getString("name"),
                             rs.getString("split_logic"),
-                            parseSettings(rs.getString("settings"))
+                            parseSettings(rs.getString("settings")),
+                            rs.getString("description")
                     ));
                 }
             }

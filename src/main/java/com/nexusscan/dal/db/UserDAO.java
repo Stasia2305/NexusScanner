@@ -35,6 +35,7 @@ public class UserDAO implements IUserDAO {
                     return new User(
                             rs.getString("username"),
                             rs.getString("password"),
+                            rs.getString("email"),
                             parseRole(rs.getString("role"))
                     );
                 }
@@ -54,6 +55,7 @@ public class UserDAO implements IUserDAO {
                 users.add(new User(
                         rs.getString("username"),
                         rs.getString("password"),
+                        rs.getString("email"),
                         parseRole(rs.getString("role"))
                 ));
             }
@@ -63,24 +65,26 @@ public class UserDAO implements IUserDAO {
 
     @Override
     public void addUser(User user) throws SQLException {
-        String sql = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)";
         try (Connection conn = databaseService.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, user.getUsername());
             pstmt.setString(2, user.getPassword());
-            pstmt.setString(3, user.getRole().name());
+            pstmt.setString(3, user.getEmail());
+            pstmt.setString(4, user.getRole().name());
             pstmt.executeUpdate();
         }
     }
 
     @Override
     public void updateUser(User user) throws SQLException {
-        String sql = "UPDATE users SET password = ?, role = ? WHERE username = ?";
+        String sql = "UPDATE users SET password = ?, email = ?, role = ? WHERE username = ?";
         try (Connection conn = databaseService.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, user.getPassword());
-            pstmt.setString(2, user.getRole().name());
-            pstmt.setString(3, user.getUsername());
+            pstmt.setString(2, user.getEmail());
+            pstmt.setString(3, user.getRole().name());
+            pstmt.setString(4, user.getUsername());
             pstmt.executeUpdate();
         }
     }

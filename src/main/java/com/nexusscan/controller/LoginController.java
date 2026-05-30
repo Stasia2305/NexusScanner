@@ -69,6 +69,7 @@ public class LoginController {
             stage.setMaximized(true);
         } catch (IOException e) {
             e.printStackTrace();
+            System.err.println("Failed to load FXML: " + fxmlFile);
             errorLabel.setText("Error loading dashboard");
         }
     }

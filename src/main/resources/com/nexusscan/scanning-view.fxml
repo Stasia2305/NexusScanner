@@ -32,6 +32,7 @@
                     <Separator orientation="VERTICAL" />
                     <Button text="Settings" onAction="#onSettingsClick" styleClass="button-secondary"/>
                     <Button text="Export (F12)" onAction="#onExportClick" styleClass="button-success"/>
+                    <Button text="Back" onAction="#onBackClick" styleClass="button-secondary"/>
                     <Button text="Exit" onAction="#onLogoutClick" styleClass="button-danger"/>
                 </HBox>
             </HBox>

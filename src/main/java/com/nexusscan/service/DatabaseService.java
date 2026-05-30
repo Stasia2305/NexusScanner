@@ -27,11 +27,29 @@ public class DatabaseService {
             this.user = props.getProperty("db.user");
             this.password = props.getProperty("db.password");
             
+            // First, ensure the database exists
+            ensureDatabaseExists();
+            
             // Initialize database structure
             createTables();
             seedData();
         } catch (IOException | SQLException e) {
             throw new RuntimeException("Fatal: Could not initialize database connection.", e);
+        }
+    }
+
+    private void ensureDatabaseExists() throws SQLException {
+        // We connect to the server WITHOUT specifying the database to create it if missing
+        String baseUrl = url.replaceAll(";databaseName=[^;]*", "");
+        try (Connection conn = (user != null && password != null) ? 
+                DriverManager.getConnection(baseUrl, user, password) : 
+                DriverManager.getConnection(baseUrl)) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'NexusScan') CREATE DATABASE NexusScan");
+            }
+        } catch (SQLException e) {
+            // We might not have permission to CREATE DATABASE or see sys.databases, 
+            // but we'll try to continue if the database already exists.
         }
     }
 
@@ -72,14 +90,24 @@ public class DatabaseService {
             createTableIfNotExists(stmt, "pages", "id INT IDENTITY(1,1) PRIMARY KEY, document_id INT, page_number INT, image_data VARBINARY(MAX), rotation FLOAT");
             
             // User management tables
-            createTableIfNotExists(stmt, "users", "username VARCHAR(255) PRIMARY KEY, password VARCHAR(255), role VARCHAR(50)");
-            createTableIfNotExists(stmt, "profiles", "id INT IDENTITY(1,1) PRIMARY KEY, name VARCHAR(255) UNIQUE, split_logic VARCHAR(255), settings NVARCHAR(MAX)");
+            createTableIfNotExists(stmt, "users", "username VARCHAR(255) PRIMARY KEY, password VARCHAR(255), email VARCHAR(255), role VARCHAR(50)");
+            createTableIfNotExists(stmt, "profiles", "id INT IDENTITY(1,1) PRIMARY KEY, name VARCHAR(255) UNIQUE, split_logic VARCHAR(255), settings NVARCHAR(MAX), description NVARCHAR(MAX)");
             createTableIfNotExists(stmt, "user_profiles", "username VARCHAR(255), profile_id INT");
+            
+            // Migration logic for existing tables
+            ensureColumnExists(stmt, "users", "email", "VARCHAR(255)");
+            ensureColumnExists(stmt, "profiles", "description", "NVARCHAR(MAX)");
             
             // Metadata and logging tables
             createTableIfNotExists(stmt, "metadata_fields", "id INT IDENTITY(1,1) PRIMARY KEY, field_name VARCHAR(255) UNIQUE");
             createTableIfNotExists(stmt, "logs", "id INT IDENTITY(1,1) PRIMARY KEY, timestamp DATETIME DEFAULT GETDATE(), username VARCHAR(255), action NVARCHAR(MAX)");
         }
+    }
+
+    private void ensureColumnExists(Statement stmt, String tableName, String columnName, String type) throws SQLException {
+        String sql = String.format("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('%s') AND name = '%s') " +
+                                    "ALTER TABLE %s ADD %s %s", tableName, columnName, tableName, columnName, type);
+        stmt.execute(sql);
     }
 
     private void createTableIfNotExists(Statement stmt, String tableName, String columns) throws SQLException {
@@ -100,7 +128,7 @@ public class DatabaseService {
     private void seedAdminUser(Statement stmt) throws SQLException {
         ResultSet rs = stmt.executeQuery("SELECT count(*) FROM users WHERE username = 'admin'");
         if (rs.next() && rs.getInt(1) == 0) {
-            stmt.execute("INSERT INTO users (username, password, role) VALUES ('admin', 'admin', 'ADMIN')");
+            stmt.execute("INSERT INTO users (username, password, email, role) VALUES ('admin', 'admin', 'admin@nexusscan.com', 'ADMIN')");
         }
     }
 
@@ -119,12 +147,13 @@ public class DatabaseService {
 
     private void seedDefaultProfile(Connection conn) throws SQLException {
         String sql = "IF NOT EXISTS (SELECT 1 FROM profiles WHERE name = ?) " +
-                     "INSERT INTO profiles (name, split_logic, settings) VALUES (?, ?, ?)";
+                     "INSERT INTO profiles (name, split_logic, settings, description) VALUES (?, ?, ?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, "Default Profile");
             pstmt.setString(2, "Default Profile");
             pstmt.setString(3, "5");
             pstmt.setString(4, "rotation=0;quality=high");
+            pstmt.setString(5, "Standard scanning configuration");
             pstmt.executeUpdate();
         }
     }

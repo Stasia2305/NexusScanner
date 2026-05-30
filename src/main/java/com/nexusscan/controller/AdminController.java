@@ -10,6 +10,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -29,8 +30,7 @@ public class AdminController {
     // User Management
     @FXML private ListView<String> userListView;
     @FXML private TextField userSearchField;
-    @FXML private VBox userDetailsBox;
-    @FXML private StackPane userPlaceholder;
+    @FXML private HBox userDetailsBox;
     @FXML private Label selectedUserLabel;
     @FXML private ListView<String> assignedProfilesListView;
     @FXML private ComboBox<Profile> quickProfileComboBox;
@@ -39,16 +39,17 @@ public class AdminController {
     @FXML private ListView<String> profileListView;
     @FXML private TextField profileSearchField;
     @FXML private TextField profileNameField;
+    @FXML private TextArea profileDescriptionArea;
     @FXML private TextField splitLogicField;
 
     // Registration
     @FXML private TextField newUsernameField;
+    @FXML private TextField newEmailField;
     @FXML private PasswordField newPasswordField;
     @FXML private ComboBox<User.Role> roleComboBox;
 
     // Metadata
     @FXML private ListView<String> metadataFieldListView;
-    @FXML private TextField metadataSearchField;
     @FXML private TextField newMetadataFieldName;
 
     // Logs
@@ -76,32 +77,61 @@ public class AdminController {
 
     @FXML
     public void initialize() {
-        setupListsAndFiltering();
-        setupSelectionListeners();
-        setupConverters();
-        
-        refreshAllData();
+        try {
+            User user = AppState.getInstance().getCurrentUser();
+            if (user == null) {
+                System.err.println("Error: No current user set in AppState for Admin");
+            }
+            
+            setupListsAndFiltering();
+            setupSelectionListeners();
+            setupConverters();
+            
+            refreshAllData();
+        } catch (Exception e) {
+            System.err.println("Critical error during AdminController initialization:");
+            e.printStackTrace();
+            throw e; // Rethrow to let FXMLLoader know it failed
+        }
     }
 
     private void setupListsAndFiltering() {
-        userListView.setItems(filteredUserList);
-        profileListView.setItems(filteredProfileList);
-        systemLogListView.setItems(filteredLogList);
-        metadataFieldListView.setItems(filteredMetadataList);
-        roleComboBox.setItems(FXCollections.observableArrayList(User.Role.values()));
-        quickProfileComboBox.setItems(allProfilesObjects);
+        if (userListView != null) userListView.setItems(filteredUserList);
+        // Custom cell factory for user list to show email
+        if (userListView != null) {
+            userListView.setCellFactory(lv -> new ListCell<>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                        setGraphic(null);
+                    } else {
+                        setText(item);
+                    }
+                }
+            });
+        }
+        if (profileListView != null) profileListView.setItems(filteredProfileList);
+        if (systemLogListView != null) systemLogListView.setItems(filteredLogList);
+        if (metadataFieldListView != null) metadataFieldListView.setItems(filteredMetadataList);
+        if (roleComboBox != null) roleComboBox.setItems(FXCollections.observableArrayList(User.Role.values()));
+        if (quickProfileComboBox != null) quickProfileComboBox.setItems(allProfilesObjects);
 
-        userSearchField.textProperty().addListener((obs, old, val) -> 
-            filteredUserList.setPredicate(u -> val == null || val.isEmpty() || u.toLowerCase().contains(val.toLowerCase())));
+        if (userSearchField != null) {
+            userSearchField.textProperty().addListener((obs, old, val) -> 
+                filteredUserList.setPredicate(u -> val == null || val.isEmpty() || u.toLowerCase().contains(val.toLowerCase())));
+        }
         
-        profileSearchField.textProperty().addListener((obs, old, val) -> 
-            filteredProfileList.setPredicate(p -> val == null || val.isEmpty() || p.toLowerCase().contains(val.toLowerCase())));
+        if (profileSearchField != null) {
+            profileSearchField.textProperty().addListener((obs, old, val) -> 
+                filteredProfileList.setPredicate(p -> val == null || val.isEmpty() || p.toLowerCase().contains(val.toLowerCase())));
+        }
 
-        logSearchField.textProperty().addListener((obs, old, val) -> 
-            filteredLogList.setPredicate(l -> val == null || val.isEmpty() || l.toLowerCase().contains(val.toLowerCase())));
-
-        metadataSearchField.textProperty().addListener((obs, old, val) -> 
-            filteredMetadataList.setPredicate(m -> val == null || val.isEmpty() || m.toLowerCase().contains(val.toLowerCase())));
+        if (logSearchField != null) {
+            logSearchField.textProperty().addListener((obs, old, val) -> 
+                filteredLogList.setPredicate(l -> val == null || val.isEmpty() || l.toLowerCase().contains(val.toLowerCase())));
+        }
     }
 
     private void setupSelectionListeners() {
@@ -125,14 +155,12 @@ public class AdminController {
         selectedUserLabel.setText(username);
         userDetailsBox.setDisable(false);
         userDetailsBox.setVisible(true);
-        userPlaceholder.setVisible(false);
         refreshAssignedProfiles(username);
     }
 
     private void hideUserDetails() {
         userDetailsBox.setDisable(true);
         userDetailsBox.setVisible(false);
-        userPlaceholder.setVisible(true);
         assignedProfilesListView.getItems().clear();
     }
 
@@ -178,14 +206,16 @@ public class AdminController {
     @FXML
     private void onAddUserClick() {
         String username = newUsernameField.getText();
+        String email = newEmailField.getText();
         String password = newPasswordField.getText();
         User.Role role = roleComboBox.getValue();
         if (!username.isEmpty() && !password.isEmpty() && role != null) {
             try {
-                userService.registerUser(new User(username, password, role));
+                userService.registerUser(new User(username, password, email, role));
                 loggingService.log("Created user: " + username, AppState.getInstance().getCurrentUsernameSafe());
                 refreshUserList();
                 newUsernameField.clear();
+                newEmailField.clear();
                 newPasswordField.clear();
                 new Alert(Alert.AlertType.INFORMATION, "User registered successfully").show();
             } catch (SQLException e) {
@@ -217,13 +247,16 @@ public class AdminController {
     private void onAddProfileClick() {
         String name = profileNameField.getText();
         String logic = splitLogicField.getText();
+        String description = (profileDescriptionArea != null) ? profileDescriptionArea.getText() : "";
         if (!name.isEmpty()) {
             try {
-                profileService.createProfile(new Profile(name, logic));
+                Profile profile = new Profile(name, logic, null, description);
+                profileService.createProfile(profile);
                 loggingService.log("Created profile: " + name, AppState.getInstance().getCurrentUsernameSafe());
                 refreshProfileList();
                 profileNameField.clear();
                 splitLogicField.clear();
+                if (profileDescriptionArea != null) profileDescriptionArea.clear();
             } catch (SQLException e) {
                 new Alert(Alert.AlertType.ERROR, "Profile creation failed").show();
             }

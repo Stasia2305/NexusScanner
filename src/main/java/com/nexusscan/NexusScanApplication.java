@@ -18,6 +18,15 @@ public class NexusScanApplication extends Application {
      */
     @Override
     public void start(Stage stage) throws IOException {
+        // Initialize database structure
+        try {
+            com.nexusscan.service.DatabaseService.getInstance();
+        } catch (Exception e) {
+            e.printStackTrace();
+            // We can't show an alert here easily because the UI isn't ready yet,
+            // but at least it will be in the logs.
+        }
+
         // Load the login screen design from the FXML file
         FXMLLoader fxmlLoader = new FXMLLoader(NexusScanApplication.class.getResource("login-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());

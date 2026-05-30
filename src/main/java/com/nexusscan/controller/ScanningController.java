@@ -662,6 +662,38 @@ public class ScanningController {
      * Highlights a specific page in the sidebar list.
      */
 
+    @FXML
+    private void onBackClick() throws IOException {
+        if (scanButton.isDisable()) {
+            new Alert(Alert.AlertType.WARNING, "Please wait for the current scan to finish.").show();
+            return;
+        }
+        if (!documents.isEmpty() && totalScans > 0) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Confirm Return");
+            alert.setHeaderText("Unsaved scanning session");
+            alert.setContentText("You have scanned pages that are not exported. Are you sure you want to go back? All unsaved work will be lost.");
+            
+            ButtonType backBtn = new ButtonType("Back and Discard", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancelBtn = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+            alert.getButtonTypes().setAll(backBtn, cancelBtn);
+            
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.isEmpty() || result.get() == cancelBtn) {
+                return;
+            }
+        }
+
+        String fxml = AppState.getInstance().getCurrentUser().getRole() == User.Role.ADMIN ? "admin-dashboard.fxml" : "user-dashboard.fxml";
+        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/nexusscan/" + fxml));
+        Scene scene = new Scene(fxmlLoader.load());
+        Stage stage = (Stage) profileLabel.getScene().getWindow();
+        stage.setScene(scene);
+        stage.setTitle(AppState.getInstance().getCurrentUser().getRole() == User.Role.ADMIN ? "Admin Dashboard" : "User Dashboard");
+        stage.setMaximized(true);
+        stage.setResizable(true);
+    }
+
     /**
      * Logs out the current user and returns to the login screen.
      * Warns the user if there is unsaved work.
