@@ -6,14 +6,12 @@ import java.sql.*;
 import java.util.Properties;
 
 /**
- * The DatabaseService is responsible for managing the connection to the MSSQL database.
+ * The DatabaseService is responsible for managing the connection to the SQLite database.
  * It implements the Singleton pattern to ensure a single connection point.
  */
 public class DatabaseService {
     private static DatabaseService instance;
     private final String url;
-    private final String user;
-    private final String password;
 
     private DatabaseService() {
         Properties props = new Properties();
@@ -23,14 +21,7 @@ public class DatabaseService {
             }
             props.load(is);
             
-            this.url = String.format("jdbc:sqlserver://%s:%s;databaseName=%s;encrypt=%s;trustServerCertificate=%s;",
-                    props.getProperty("db.server"),
-                    props.getProperty("db.port"),
-                    props.getProperty("db.database"),
-                    props.getProperty("db.encrypt"),
-                    props.getProperty("db.trustServerCertificate"));
-            this.user = props.getProperty("db.user");
-            this.password = props.getProperty("db.password");
+            this.url = props.getProperty("db.url", "jdbc:sqlite:nexusscan.db");
             
             // Initialize database structure
             createTables();
@@ -47,32 +38,27 @@ public class DatabaseService {
     }
 
     public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(url, user, password);
+        return DriverManager.getConnection(url);
     }
 
     private void createTables() throws SQLException {
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
-            // Create core data tables if they don't exist (MSSQL syntax)
-            executeIfNotExists(stmt, "clients", "CREATE TABLE clients (id INT IDENTITY(1,1) PRIMARY KEY, name NVARCHAR(255))");
-            executeIfNotExists(stmt, "archives", "CREATE TABLE archives (id INT IDENTITY(1,1) PRIMARY KEY, client_id INT, name NVARCHAR(255))");
-            executeIfNotExists(stmt, "boxes", "CREATE TABLE boxes (id INT IDENTITY(1,1) PRIMARY KEY, archive_id INT, box_id_str NVARCHAR(255))");
-            executeIfNotExists(stmt, "cases", "CREATE TABLE cases (id INT IDENTITY(1,1) PRIMARY KEY, box_id INT, case_number NVARCHAR(255), metadata NVARCHAR(MAX))");
-            executeIfNotExists(stmt, "documents", "CREATE TABLE documents (id INT IDENTITY(1,1) PRIMARY KEY, case_id INT, barcode NVARCHAR(255), status NVARCHAR(50))");
-            executeIfNotExists(stmt, "pages", "CREATE TABLE pages (id INT IDENTITY(1,1) PRIMARY KEY, document_id INT, page_number INT, image_data VARBINARY(MAX), rotation FLOAT)");
+            // Create core data tables if they don't exist (SQLite syntax)
+            stmt.execute("CREATE TABLE IF NOT EXISTS clients (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(255))");
+            stmt.execute("CREATE TABLE IF NOT EXISTS archives (id INTEGER PRIMARY KEY AUTOINCREMENT, client_id INTEGER, name VARCHAR(255))");
+            stmt.execute("CREATE TABLE IF NOT EXISTS boxes (id INTEGER PRIMARY KEY AUTOINCREMENT, archive_id INTEGER, box_id_str VARCHAR(255))");
+            stmt.execute("CREATE TABLE IF NOT EXISTS cases (id INTEGER PRIMARY KEY AUTOINCREMENT, box_id INTEGER, case_number VARCHAR(255), metadata TEXT)");
+            stmt.execute("CREATE TABLE IF NOT EXISTS documents (id INTEGER PRIMARY KEY AUTOINCREMENT, case_id INTEGER, barcode VARCHAR(255), status VARCHAR(50))");
+            stmt.execute("CREATE TABLE IF NOT EXISTS pages (id INTEGER PRIMARY KEY AUTOINCREMENT, document_id INTEGER, page_number INTEGER, image_data BLOB, rotation FLOAT)");
             
             // Create user management and configuration tables
-            executeIfNotExists(stmt, "users", "CREATE TABLE users (username NVARCHAR(255) PRIMARY KEY, password NVARCHAR(255), role NVARCHAR(50))");
-            executeIfNotExists(stmt, "profiles", "CREATE TABLE profiles (id INT IDENTITY(1,1) PRIMARY KEY, name NVARCHAR(255) UNIQUE, split_logic NVARCHAR(255), settings NVARCHAR(MAX))");
-            executeIfNotExists(stmt, "user_profiles", "CREATE TABLE user_profiles (username NVARCHAR(255), profile_id INT)");
+            stmt.execute("CREATE TABLE IF NOT EXISTS users (username VARCHAR(255) PRIMARY KEY, password VARCHAR(255), role VARCHAR(50))");
+            stmt.execute("CREATE TABLE IF NOT EXISTS profiles (id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR(255) UNIQUE, split_logic VARCHAR(255), settings TEXT)");
+            stmt.execute("CREATE TABLE IF NOT EXISTS user_profiles (username VARCHAR(255), profile_id INTEGER)");
             
             // Create metadata and logging tables
-            executeIfNotExists(stmt, "metadata_fields", "CREATE TABLE metadata_fields (id INT IDENTITY(1,1) PRIMARY KEY, field_name NVARCHAR(255) UNIQUE)");
-            executeIfNotExists(stmt, "logs", "CREATE TABLE logs (id INT IDENTITY(1,1) PRIMARY KEY, timestamp DATETIME DEFAULT GETDATE(), username NVARCHAR(255), action NVARCHAR(MAX))");
+            stmt.execute("CREATE TABLE IF NOT EXISTS metadata_fields (id INTEGER PRIMARY KEY AUTOINCREMENT, field_name VARCHAR(255) UNIQUE)");
+            stmt.execute("CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, username VARCHAR(255), action TEXT)");
         }
-    }
-
-    private void executeIfNotExists(Statement stmt, String tableName, String createSql) throws SQLException {
-        String checkSql = String.format("IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = '%s') BEGIN %s END", tableName, createSql);
-        stmt.execute(checkSql);
     }
 }
