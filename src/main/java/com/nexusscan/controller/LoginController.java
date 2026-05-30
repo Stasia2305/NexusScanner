@@ -3,6 +3,7 @@ package com.nexusscan.controller;
 import com.nexusscan.model.User;
 import com.nexusscan.service.AppState;
 import com.nexusscan.service.LoggingService;
+import com.nexusscan.service.UserService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -12,6 +13,7 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.sql.SQLException;
 
 /**
  * The LoginController handles the login screen.
@@ -26,23 +28,26 @@ public class LoginController {
     @FXML
     private Label errorLabel;
 
+    private final UserService userService = new UserService();
+
     @FXML
     protected void onLoginButtonClick() {
         String username = usernameField.getText();
         String password = passwordField.getText();
         
-        User userByUsername = AppState.getInstance().getUsers().stream()
-                .filter(u -> u.getUsername().equals(username))
-                .findFirst().orElse(null);
+        try {
+            User authenticatedUser = userService.authenticate(username, password);
 
-        if (userByUsername == null) {
-            errorLabel.setText("Invalid username");
-        } else if (!userByUsername.getPassword().equals(password)) {
-            errorLabel.setText("Incorrect password");
-        } else {
-            AppState.getInstance().setCurrentUser(userByUsername);
-            LoggingService.getInstance().log("User logged in", username);
-            navigateToDashboard(userByUsername);
+            if (authenticatedUser == null) {
+                errorLabel.setText("Invalid username or password");
+            } else {
+                AppState.getInstance().setCurrentUser(authenticatedUser);
+                LoggingService.getInstance().log("User logged in", username);
+                navigateToDashboard(authenticatedUser);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            errorLabel.setText("Database error during login");
         }
     }
 

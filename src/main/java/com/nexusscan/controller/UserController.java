@@ -2,6 +2,7 @@ package com.nexusscan.controller;
 
 import com.nexusscan.model.Profile;
 import com.nexusscan.service.AppState;
+import com.nexusscan.service.ProfileService;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -12,6 +13,7 @@ import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
 import java.io.IOException;
+import java.sql.SQLException;
 
 /**
  * The UserController manages the dashboard for regular users.
@@ -21,11 +23,17 @@ public class UserController {
     @FXML private ComboBox<Profile> profileComboBox;
     @FXML private TextField boxIdField;
 
+    private final ProfileService profileService = new ProfileService();
+
     @FXML
     public void initialize() {
         // Load only the profiles that the admin has assigned to this user
         String username = AppState.getInstance().getCurrentUser().getUsername();
-        profileComboBox.setItems(FXCollections.observableArrayList(AppState.getInstance().getAccessibleProfiles(username)));
+        try {
+            profileComboBox.setItems(FXCollections.observableArrayList(profileService.getAccessibleProfiles(username)));
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         
         // Use a converter to display the profile name in the dropdown
         profileComboBox.setConverter(new StringConverter<>() {

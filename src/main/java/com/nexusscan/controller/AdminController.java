@@ -2,9 +2,7 @@ package com.nexusscan.controller;
 
 import com.nexusscan.model.Profile;
 import com.nexusscan.model.User;
-import com.nexusscan.service.AppState;
-import com.nexusscan.service.DatabaseService;
-import com.nexusscan.service.LoggingService;
+import com.nexusscan.service.*;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -13,12 +11,7 @@ import javafx.scene.control.*;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,8 +19,7 @@ import javafx.scene.layout.VBox;
 
 /**
  * The AdminController manages the Administrative Dashboard.
- * It allows administrators to create users, set up scanning profiles, 
- * manage metadata fields, and view system logs.
+ * It adheres to the Presentation Layer of the 3-layered architecture.
  */
 public class AdminController {
     @FXML private ListView<String> userListView;
@@ -43,6 +35,11 @@ public class AdminController {
     @FXML private TextField newMetadataFieldName;
     @FXML private ListView<String> systemLogListView;
 
+    private final UserService userService = new UserService();
+    private final ProfileService profileService = new ProfileService();
+    private final MetadataService metadataService = new MetadataService();
+    private final LoggingService loggingService = LoggingService.getInstance();
+
     @FXML
     public void initialize() {
         roleComboBox.setItems(FXCollections.observableArrayList(User.Role.values()));
@@ -57,18 +54,18 @@ public class AdminController {
         String username = newUsernameField.getText();
         String password = newPasswordField.getText();
         User.Role role = roleComboBox.getValue();
+        
         if (!username.isEmpty() && !password.isEmpty() && role != null) {
-            boolean exists = AppState.getInstance().getUsers().stream()
-                    .anyMatch(u -> u.getUsername().equalsIgnoreCase(username));
-            if (exists) {
-                new Alert(Alert.AlertType.ERROR, "User already exists").show();
-                return;
+            try {
+                User user = new User(username, password, role);
+                userService.registerUser(user);
+                loggingService.log("Admin created user: " + username, AppState.getInstance().getCurrentUsernameSafe());
+                refreshUserList();
+                newUsernameField.clear();
+                newPasswordField.clear();
+            } catch (SQLException e) {
+                new Alert(Alert.AlertType.ERROR, "Failed to create user: " + e.getMessage()).show();
             }
-            AppState.getInstance().addUser(new User(username, password, role));
-            LoggingService.getInstance().log("Admin created user: " + username, AppState.getInstance().getCurrentUsernameSafe());
-            refreshUserList();
-            newUsernameField.clear();
-            newPasswordField.clear();
         }
     }
 
@@ -84,9 +81,13 @@ public class AdminController {
                 new Alert(Alert.AlertType.ERROR, "You cannot delete your own account while logged in.").show();
                 return;
             }
-            AppState.getInstance().deleteUser(selected);
-            LoggingService.getInstance().log("Admin deleted user: " + selected, AppState.getInstance().getCurrentUsernameSafe());
-            refreshUserList();
+            try {
+                userService.deleteUser(selected);
+                loggingService.log("Admin deleted user: " + selected, AppState.getInstance().getCurrentUsernameSafe());
+                refreshUserList();
+            } catch (SQLException e) {
+                new Alert(Alert.AlertType.ERROR, "Failed to delete user").show();
+            }
         }
     }
 
@@ -94,72 +95,54 @@ public class AdminController {
     private void onAddMetadataFieldClick() {
         String name = newMetadataFieldName.getText();
         if (!name.isEmpty()) {
-            AppState.getInstance().addMetadataField(name);
-            refreshMetadataFieldList();
-            newMetadataFieldName.clear();
-            LoggingService.getInstance().log("Admin added metadata field: " + name, AppState.getInstance().getCurrentUsernameSafe());
-        }
-    }
-
-    @FXML
-    private void onDeleteMetadataFieldClick() {
-        String selected = metadataFieldListView.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            AppState.getInstance().removeMetadataField(selected);
-            refreshMetadataFieldList();
-            LoggingService.getInstance().log("Admin deleted metadata field: " + selected, AppState.getInstance().getCurrentUsernameSafe());
+            try {
+                metadataService.addField(name);
+                refreshMetadataFieldList();
+                newMetadataFieldName.clear();
+                loggingService.log("Admin added metadata field: " + name, AppState.getInstance().getCurrentUsernameSafe());
+            } catch (SQLException e) {
+                new Alert(Alert.AlertType.ERROR, "Failed to add metadata field").show();
+            }
         }
     }
 
     @FXML
     private void onRefreshLogsClick() {
-        List<String> logStrings = new ArrayList<>();
+        systemLogListView.setItems(FXCollections.observableArrayList(loggingService.getRecentLogs()));
+    }
+
+    private void refreshUserList() {
         try {
-            DatabaseService db = DatabaseService.getInstance();
-            try (Statement stmt = db.getConnection().createStatement();
-                 ResultSet rs = stmt.executeQuery("SELECT * FROM logs ORDER BY id DESC LIMIT 100")) {
-                while (rs.next()) {
-                    logStrings.add("[" + rs.getString("timestamp") + "] " + rs.getString("username") + ": " + rs.getString("action"));
-                }
-            }
+            List<String> usernames = userService.getAllUsers().stream().map(User::getUsername).toList();
+            userListView.setItems(FXCollections.observableArrayList(usernames));
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        systemLogListView.setItems(FXCollections.observableArrayList(logStrings));
+    }
+
+    private void refreshProfileList() {
+        try {
+            List<String> profiles = profileService.getAllProfiles().stream().map(Profile::getName).toList();
+            profileListView.setItems(FXCollections.observableArrayList(profiles));
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     private void refreshMetadataFieldList() {
-        List<String> fields = AppState.getInstance().getMetadataFields().stream()
-                .map(com.nexusscan.model.MetadataField::getFieldName)
-                .toList();
-        metadataFieldListView.setItems(FXCollections.observableArrayList(fields));
+        try {
+            List<String> fields = metadataService.getAllFields().stream().map(f -> f.getFieldName()).toList();
+            metadataFieldListView.setItems(FXCollections.observableArrayList(fields));
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    /**
-     * Creates a new scanning profile (a set of rules for scanning).
-     * It also opens a dialog to define extra settings like default rotation.
-     */
     @FXML
     private void onAddProfileClick() {
         String name = profileNameField.getText();
         String logic = splitLogicField.getText();
         if (!name.isEmpty()) {
-            if (logic != null && !logic.isEmpty()) {
-                try {
-                    int interval = Integer.parseInt(logic.trim());
-                    if (interval <= 0) {
-                        new Alert(Alert.AlertType.ERROR, "Split logic must be a positive integer.").show();
-                        return;
-                    }
-                } catch (NumberFormatException e) {
-                    // It's allowed to be non-numeric (e.g. barcode pattern), 
-                    // but for now we expect numeric or empty based on implementation.
-                    // If we want to strictly enforce numeric:
-                    new Alert(Alert.AlertType.ERROR, "Split logic must be a numeric interval.").show();
-                    return;
-                }
-            }
-            
             Dialog<Map<String, String>> dialog = new Dialog<>();
             dialog.setTitle("Profile Settings");
             dialog.setHeaderText("Define general settings for this profile (e.g., rotation=5)");
@@ -181,15 +164,15 @@ public class AdminController {
             });
             
             dialog.showAndWait().ifPresent(settings -> {
-                boolean success = AppState.getInstance().addProfile(new Profile(name, logic, settings));
-                if (success) {
-                    LoggingService.getInstance().log("Admin created profile: " + name + " with settings: " + settings, AppState.getInstance().getCurrentUsernameSafe());
+                try {
+                    profileService.createProfile(new Profile(name, logic, settings));
+                    loggingService.log("Admin created profile: " + name, AppState.getInstance().getCurrentUsernameSafe());
                     refreshProfileList();
                     profileNameField.clear();
                     splitLogicField.clear();
                     new Alert(Alert.AlertType.INFORMATION, "Profile created successfully").show();
-                } else {
-                    new Alert(Alert.AlertType.ERROR, "Failed to create profile. Name may already exist.").show();
+                } catch (SQLException e) {
+                    new Alert(Alert.AlertType.ERROR, "Failed to create profile").show();
                 }
             });
         }
@@ -208,46 +191,20 @@ public class AdminController {
         return map;
     }
 
-    /**
-     * Connects a scanning profile to a specific user.
-     * Users can only see and use profiles that have been assigned to them by an admin.
-     */
     @FXML
     private void onAssignProfileClick() {
         String selectedUser = userListView.getSelectionModel().getSelectedItem();
         String selectedProfileName = profileListView.getSelectionModel().getSelectedItem();
         
         if (selectedUser != null && selectedProfileName != null) {
-            Profile profile = AppState.getInstance().getAllProfiles().stream()
-                    .filter(p -> p.getName().equals(selectedProfileName))
-                    .findFirst().orElse(null);
-            
-            if (profile != null) {
-                // P2 Fix: Duplicate assignment check
-                boolean alreadyAssigned = AppState.getInstance().getAccessibleProfiles(selectedUser).stream()
-                        .anyMatch(p -> p.getName().equals(selectedProfileName));
-                if (alreadyAssigned) {
-                    new Alert(Alert.AlertType.WARNING, "Profile already assigned to this user").show();
-                    return;
-                }
-                AppState.getInstance().assignProfileToUser(selectedUser, profile);
-                LoggingService.getInstance().log("Admin assigned profile " + selectedProfileName + " to " + selectedUser, AppState.getInstance().getCurrentUsernameSafe());
-                Alert alert = new Alert(Alert.AlertType.INFORMATION, "Profile assigned successfully");
-                alert.show();
+            try {
+                profileService.assignProfileToUser(selectedUser, selectedProfileName);
+                loggingService.log("Admin assigned profile " + selectedProfileName + " to " + selectedUser, AppState.getInstance().getCurrentUsernameSafe());
+                new Alert(Alert.AlertType.INFORMATION, "Profile assigned successfully").show();
+            } catch (SQLException e) {
+                new Alert(Alert.AlertType.ERROR, "Failed to assign profile").show();
             }
         }
-    }
-
-    private void refreshUserList() {
-        userListView.setItems(FXCollections.observableArrayList(
-                AppState.getInstance().getUsers().stream().map(User::getUsername).toList()
-        ));
-    }
-
-    private void refreshProfileList() {
-        profileListView.setItems(FXCollections.observableArrayList(
-                AppState.getInstance().getAllProfiles().stream().map(Profile::getName).toList()
-        ));
     }
 
     @FXML
