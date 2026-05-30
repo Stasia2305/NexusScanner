@@ -28,7 +28,6 @@ public class LogDAO implements ILogDAO {
     @Override
     public List<String> getRecentLogs(int limit) throws SQLException {
         List<String> logs = new ArrayList<>();
-        // MSSQL uses TOP instead of LIMIT
         String sql = "SELECT TOP " + limit + " * FROM logs ORDER BY id DESC";
         try (Connection conn = databaseService.getConnection();
              Statement stmt = conn.createStatement();

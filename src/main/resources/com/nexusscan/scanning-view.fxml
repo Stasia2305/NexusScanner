@@ -27,11 +27,11 @@
                 
                 <HBox spacing="10">
                     <Button fx:id="scanButton" text="Scan (F1)" onAction="#onScanClick" styleClass="button-primary"/>
-                    <Button text="Metadata" onAction="#onMetadataClick"/>
-                    <Button fx:id="qaButton" text="QA Mode" onAction="#onQAModeClick" style="-fx-background-color: #ff9800; -fx-text-fill: white;"/>
+                    <Button text="Metadata" onAction="#onMetadataClick" styleClass="button-warning"/>
+                    <Button fx:id="qaButton" text="QA Mode" onAction="#onQAModeClick" styleClass="button-secondary"/>
                     <Separator orientation="VERTICAL" />
-                    <Button text="Settings" onAction="#onSettingsClick"/>
-                    <Button text="Save &amp; Export (F12)" onAction="#onExportClick" styleClass="button-primary" style="-fx-background-color: #4caf50;"/>
+                    <Button text="Settings" onAction="#onSettingsClick" styleClass="button-secondary"/>
+                    <Button text="Export (F12)" onAction="#onExportClick" styleClass="button-success"/>
                     <Button text="Exit" onAction="#onLogoutClick" styleClass="button-danger"/>
                 </HBox>
             </HBox>
@@ -68,26 +68,26 @@
     </center>
     
     <bottom>
-        <HBox spacing="20" styleClass="status-bar">
-            <Label text="Legend:" styleClass="status-label" style="-fx-font-weight: bold;"/>
-            <HBox spacing="5" alignment="CENTER">
-                <Region style="-fx-background-color: red; -fx-pref-width: 10; -fx-pref-height: 10; -fx-background-radius: 5;"/>
+        <HBox spacing="20" styleClass="status-bar" alignment="CENTER_LEFT">
+            <Label text="LEGEND:" styleClass="status-label" style="-fx-font-weight: bold; -fx-text-fill: -text-main;"/>
+            <HBox spacing="8" alignment="CENTER">
+                <Region style="-fx-background-color: -primary-color; -fx-pref-width: 12; -fx-pref-height: 12; -fx-background-radius: 3;"/>
                 <Label text="Profile" styleClass="status-label"/>
             </HBox>
-            <HBox spacing="5" alignment="CENTER">
-                <Region style="-fx-background-color: black; -fx-pref-width: 10; -fx-pref-height: 10; -fx-background-radius: 5;"/>
+            <HBox spacing="8" alignment="CENTER">
+                <Region style="-fx-background-color: -text-main; -fx-pref-width: 12; -fx-pref-height: 12; -fx-background-radius: 3;"/>
                 <Label text="Box" styleClass="status-label"/>
             </HBox>
-            <HBox spacing="5" alignment="CENTER">
-                <Region style="-fx-background-color: blue; -fx-pref-width: 10; -fx-pref-height: 10; -fx-background-radius: 5;"/>
+            <HBox spacing="8" alignment="CENTER">
+                <Region style="-fx-background-color: blue; -fx-pref-width: 12; -fx-pref-height: 12; -fx-background-radius: 3;"/>
                 <Label text="Document" styleClass="status-label"/>
             </HBox>
-            <HBox spacing="5" alignment="CENTER">
-                <Region style="-fx-background-color: brown; -fx-pref-width: 10; -fx-pref-height: 10; -fx-background-radius: 5;"/>
+            <HBox spacing="8" alignment="CENTER">
+                <Region style="-fx-background-color: brown; -fx-pref-width: 12; -fx-pref-height: 12; -fx-background-radius: 3;"/>
                 <Label text="Page" styleClass="status-label"/>
             </HBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Label text="System Ready" styleClass="status-label"/>
+            <Label text="SYSTEM READY" styleClass="status-label" style="-fx-font-weight: bold;"/>
         </HBox>
     </bottom>
 </BorderPane>

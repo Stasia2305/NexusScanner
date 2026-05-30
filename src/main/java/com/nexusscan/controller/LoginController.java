@@ -3,6 +3,7 @@ package com.nexusscan.controller;
 import com.nexusscan.model.User;
 import com.nexusscan.service.AppState;
 import com.nexusscan.service.LoggingService;
+import com.nexusscan.service.MetadataService;
 import com.nexusscan.service.UserService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -42,6 +43,11 @@ public class LoginController {
                 errorLabel.setText("Invalid username or password");
             } else {
                 AppState.getInstance().setCurrentUser(authenticatedUser);
+                
+                // Load metadata fields into AppState for scanning
+                MetadataService metadataService = new MetadataService();
+                AppState.getInstance().setMetadataFields(metadataService.getAllFields());
+                
                 LoggingService.getInstance().log("User logged in", username);
                 navigateToDashboard(authenticatedUser);
             }

@@ -10,4 +10,5 @@ public interface IProfileDAO {
     void deleteProfile(String name) throws SQLException;
     List<Profile> getUserProfiles(String username) throws SQLException;
     void assignProfileToUser(String username, String profileName) throws SQLException;
+    void removeProfileFromUser(String username, String profileName) throws SQLException;
 }

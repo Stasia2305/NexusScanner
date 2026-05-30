@@ -81,8 +81,23 @@ public class ProfileDAO implements IProfileDAO {
 
     @Override
     public void assignProfileToUser(String username, String profileName) throws SQLException {
-        String sql = "INSERT INTO user_profiles (username, profile_id) " +
+        String sql = "IF NOT EXISTS (SELECT 1 FROM user_profiles WHERE username = ? AND profile_id = (SELECT id FROM profiles WHERE name = ?)) " +
+                     "INSERT INTO user_profiles (username, profile_id) " +
                      "SELECT ?, id FROM profiles WHERE name = ?";
+        try (Connection conn = databaseService.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, profileName);
+            pstmt.setString(3, username);
+            pstmt.setString(4, profileName);
+            pstmt.executeUpdate();
+        }
+    }
+
+    @Override
+    public void removeProfileFromUser(String username, String profileName) throws SQLException {
+        String sql = "DELETE FROM user_profiles WHERE username = ? AND " +
+                     "profile_id = (SELECT id FROM profiles WHERE name = ?)";
         try (Connection conn = databaseService.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);

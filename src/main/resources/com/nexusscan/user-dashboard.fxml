@@ -16,25 +16,29 @@
         <Insets bottom="40.0" left="40.0" right="40.0" top="40.0"/>
     </padding>
 
-    <VBox spacing="20.0" alignment="CENTER" styleClass="card" maxWidth="400">
-        <Label text="User Dashboard" styleClass="header-label"/>
-        <Label text="Prepare for scanning session" style="-fx-text-fill: #666;"/>
-        
-        <VBox spacing="10" alignment="CENTER_LEFT" maxWidth="300">
-            <Label text="Select Scanning Profile" style="-fx-font-weight: bold;"/>
-            <ComboBox fx:id="profileComboBox" maxWidth="Infinity" promptText="Choose a profile..."/>
+    <VBox spacing="25.0" alignment="CENTER" styleClass="card" maxWidth="450">
+        <VBox spacing="5" alignment="CENTER">
+            <Label text="User Dashboard" styleClass="header-label"/>
+            <Label text="Configure your scanning session" style="-fx-text-fill: -text-muted;"/>
         </VBox>
         
-        <VBox spacing="10" alignment="CENTER_LEFT" maxWidth="300">
-            <Label text="Box Identifier" style="-fx-font-weight: bold;"/>
-            <TextField fx:id="boxIdField" promptText="Enter Box ID (e.g., BOX-001)" maxWidth="Infinity"/>
+        <Separator/>
+
+        <VBox spacing="10" alignment="CENTER_LEFT" maxWidth="350">
+            <Label text="Scanning Profile" style="-fx-font-weight: bold; -fx-text-fill: -text-main;"/>
+            <ComboBox fx:id="profileComboBox" maxWidth="Infinity" promptText="Select an assigned profile..."/>
         </VBox>
         
-        <Button text="Initialize Scanning" onAction="#onStartScanningClick" styleClass="button-primary" maxWidth="300" defaultButton="true"/>
+        <VBox spacing="10" alignment="CENTER_LEFT" maxWidth="350">
+            <Label text="Box Identifier" style="-fx-font-weight: bold; -fx-text-fill: -text-main;"/>
+            <TextField fx:id="boxIdField" promptText="e.g. B-2024-001" maxWidth="Infinity"/>
+        </VBox>
+        
+        <Button text="Start Scanning Session" onAction="#onStartScanningClick" styleClass="button-primary" maxWidth="350" defaultButton="true" prefHeight="45"/>
         
         <Separator style="-fx-padding: 10 0 10 0;"/>
         
-        <Button text="Logout" onAction="#onLogoutClick" styleClass="button-danger" maxWidth="300"/>
+        <Button text="Logout" onAction="#onLogoutClick" styleClass="button-danger" maxWidth="350"/>
     </VBox>
     
     <Label text="Connected as: User" fx:id="connectionLabel" style="-fx-text-fill: #999; -fx-font-size: 11px;"/>

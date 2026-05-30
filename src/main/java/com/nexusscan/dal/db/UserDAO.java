@@ -15,6 +15,15 @@ public class UserDAO implements IUserDAO {
         this.databaseService = DatabaseService.getInstance();
     }
 
+    private User.Role parseRole(String roleStr) {
+        if (roleStr == null) return User.Role.USER;
+        try {
+            return User.Role.valueOf(roleStr.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return User.Role.USER;
+        }
+    }
+
     @Override
     public User getUser(String username) throws SQLException {
         String sql = "SELECT * FROM users WHERE username = ?";
@@ -26,7 +35,7 @@ public class UserDAO implements IUserDAO {
                     return new User(
                             rs.getString("username"),
                             rs.getString("password"),
-                            User.Role.valueOf(rs.getString("role"))
+                            parseRole(rs.getString("role"))
                     );
                 }
             }
@@ -45,7 +54,7 @@ public class UserDAO implements IUserDAO {
                 users.add(new User(
                         rs.getString("username"),
                         rs.getString("password"),
-                        User.Role.valueOf(rs.getString("role"))
+                        parseRole(rs.getString("role"))
                 ));
             }
         }

@@ -8,7 +8,7 @@ import java.sql.Statement;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration test to verify that the DatabaseService correctly connects to the SQLite database
+ * Integration test to verify that the DatabaseService correctly connects to the Microsoft SQL Server database
  * and initializes the required tables.
  */
 public class DatabaseConnectionTest {
@@ -35,7 +35,7 @@ public class DatabaseConnectionTest {
             };
 
             for (String tableName : tables) {
-                try (ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='" + tableName + "'")) {
+                try (ResultSet rs = stmt.executeQuery("SELECT name FROM sys.tables WHERE name='" + tableName + "'")) {
                     assertTrue(rs.next(), "Table '" + tableName + "' should exist");
                 }
             }

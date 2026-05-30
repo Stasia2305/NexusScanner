@@ -23,58 +23,105 @@
     </HBox>
     
     <TabPane VBox.vgrow="ALWAYS" style="-fx-background-color: transparent;">
-        <Tab text="Users &amp; Profiles" closable="false">
+        <!-- USER MANAGEMENT TAB -->
+        <Tab text="User Management" closable="false">
             <HBox spacing="20" style="-fx-padding: 20 0 0 0;">
-                <VBox spacing="15" HBox.hgrow="ALWAYS" styleClass="card">
-                    <Label text="User Management" styleClass="subheader-label"/>
+                <VBox spacing="15" HBox.hgrow="ALWAYS" styleClass="card" prefWidth="300">
+                    <Label text="Select User" styleClass="card-title"/>
+                    <TextField fx:id="userSearchField" promptText="Search users..."/>
                     <ListView fx:id="userListView" VBox.vgrow="ALWAYS"/>
-                    <GridPane hgap="10" vgap="10">
-                        <TextField fx:id="newUsernameField" promptText="Username" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-                        <PasswordField fx:id="newPasswordField" promptText="Password" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-                        <ComboBox fx:id="roleComboBox" promptText="Role" GridPane.columnIndex="0" GridPane.rowIndex="1" maxWidth="Infinity"/>
-                        <HBox spacing="5" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                            <Button text="Add User" onAction="#onAddUserClick" styleClass="button-primary" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                            <Button text="Delete" onAction="#onDeleteUserClick" styleClass="button-danger"/>
-                        </HBox>
-                    </GridPane>
                 </VBox>
                 
-                <VBox spacing="15" HBox.hgrow="ALWAYS" styleClass="card">
-                    <Label text="Profile Configuration" styleClass="subheader-label"/>
-                    <ListView fx:id="profileListView" VBox.vgrow="ALWAYS"/>
-                    <VBox spacing="10">
-                        <HBox spacing="10">
-                            <TextField fx:id="profileNameField" promptText="Profile Name" HBox.hgrow="ALWAYS"/>
-                            <TextField fx:id="splitLogicField" promptText="Split Logic" HBox.hgrow="ALWAYS"/>
+                <VBox spacing="15" HBox.hgrow="ALWAYS" styleClass="card" prefWidth="400">
+                    <Label text="User Details &amp; Assignments" styleClass="card-title"/>
+                    <VBox spacing="10" fx:id="userDetailsBox" disable="true">
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="User:" style="-fx-font-weight: bold;"/>
+                            <Label fx:id="selectedUserLabel" text="None selected"/>
                         </HBox>
+                        <Separator/>
+                        <Label text="Assigned Profiles" style="-fx-font-weight: bold;"/>
+                        <ListView fx:id="assignedProfilesListView" maxHeight="200"/>
                         <HBox spacing="10">
-                            <Button text="Create Profile" onAction="#onAddProfileClick" styleClass="button-primary" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                            <Button text="Assign to Selected User" onAction="#onAssignProfileClick" maxWidth="Infinity"/>
+                            <ComboBox fx:id="quickProfileComboBox" promptText="Select Profile to Add" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                            <Button text="Assign" onAction="#onQuickAssignClick" styleClass="button-primary"/>
+                            <Button text="Remove" onAction="#onRemoveAssignmentClick" styleClass="button-danger"/>
                         </HBox>
+                        <Separator/>
+                        <Button text="Delete User" onAction="#onDeleteUserClick" styleClass="button-danger" maxWidth="Infinity"/>
                     </VBox>
+                    <StackPane VBox.vgrow="ALWAYS" fx:id="userPlaceholder">
+                        <Label text="Select a user to manage assignments" style="-fx-text-fill: #999;"/>
+                    </StackPane>
                 </VBox>
             </HBox>
         </Tab>
-        
-        <Tab text="System Metadata &amp; Logs" closable="false">
-            <VBox spacing="20" style="-fx-padding: 20 0 0 0;">
-                <VBox spacing="15" styleClass="card">
-                    <Label text="Metadata Definitions" styleClass="subheader-label"/>
-                    <HBox spacing="15" alignment="CENTER_LEFT">
-                        <ListView fx:id="metadataFieldListView" HBox.hgrow="ALWAYS" maxHeight="150"/>
-                        <VBox spacing="10" prefWidth="200">
-                            <TextField fx:id="newMetadataFieldName" promptText="Field Name"/>
-                            <Button text="Add Field" onAction="#onAddMetadataFieldClick" styleClass="button-primary" maxWidth="Infinity"/>
-                            <Button text="Remove Field" onAction="#onDeleteMetadataFieldClick" styleClass="button-danger" maxWidth="Infinity"/>
-                        </VBox>
-                    </HBox>
+
+        <!-- PROFILE MANAGEMENT TAB -->
+        <Tab text="Profile Management" closable="false">
+            <HBox spacing="20" style="-fx-padding: 20 0 0 0;">
+                <VBox spacing="15" HBox.hgrow="ALWAYS" styleClass="card">
+                    <Label text="Profiles" styleClass="card-title"/>
+                    <TextField fx:id="profileSearchField" promptText="Search profiles..."/>
+                    <ListView fx:id="profileListView" VBox.vgrow="ALWAYS"/>
+                    <Button text="Delete Selected Profile" onAction="#onDeleteProfileClick" styleClass="button-danger" maxWidth="Infinity"/>
                 </VBox>
                 
+                <VBox spacing="15" HBox.hgrow="ALWAYS" styleClass="card">
+                    <Label text="Create New Profile" styleClass="card-title"/>
+                    <GridPane hgap="10" vgap="15">
+                        <Label text="Profile Name:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <TextField fx:id="profileNameField" promptText="e.g. Finance Documents" GridPane.rowIndex="0" GridPane.columnIndex="1" HBox.hgrow="ALWAYS"/>
+                        
+                        <Label text="Split Logic:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                        <TextField fx:id="splitLogicField" promptText="e.g. 5 (pages)" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                        
+                        <Button text="Create Profile" onAction="#onAddProfileClick" styleClass="button-primary" GridPane.rowIndex="2" GridPane.columnIndex="1" maxWidth="Infinity"/>
+                    </GridPane>
+                </VBox>
+            </HBox>
+        </Tab>
+
+        <!-- USER REGISTRATION TAB -->
+        <Tab text="Register New User" closable="false">
+            <VBox spacing="20" alignment="CENTER" style="-fx-padding: 40 0 0 0;">
+                <VBox spacing="20" styleClass="card" maxWidth="400" alignment="CENTER">
+                    <Label text="Registration Form" styleClass="subheader-label"/>
+                    <VBox spacing="15" maxWidth="300">
+                        <TextField fx:id="newUsernameField" promptText="Username"/>
+                        <PasswordField fx:id="newPasswordField" promptText="Password"/>
+                        <ComboBox fx:id="roleComboBox" promptText="Assign Role" maxWidth="Infinity"/>
+                        <Button text="Register User" onAction="#onAddUserClick" styleClass="button-primary" maxWidth="Infinity" prefHeight="40"/>
+                    </VBox>
+                </VBox>
+            </VBox>
+        </Tab>
+        
+        <!-- METADATA TAB -->
+        <Tab text="Metadata Configuration" closable="false">
+            <VBox spacing="20" style="-fx-padding: 20 0 0 0;">
+                <VBox spacing="15" styleClass="card" VBox.vgrow="ALWAYS">
+                    <Label text="Defined Metadata Fields" styleClass="card-title"/>
+                    <TextField fx:id="metadataSearchField" promptText="Search fields..."/>
+                    <ListView fx:id="metadataFieldListView" VBox.vgrow="ALWAYS"/>
+                    <HBox spacing="15">
+                        <TextField fx:id="newMetadataFieldName" promptText="New Field Name" HBox.hgrow="ALWAYS"/>
+                        <Button text="Add Field" onAction="#onAddMetadataFieldClick" styleClass="button-primary"/>
+                        <Button text="Delete Selected" onAction="#onDeleteMetadataFieldClick" styleClass="button-danger"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+        </Tab>
+
+        <!-- LOGS TAB -->
+        <Tab text="System Audit Logs" closable="false">
+            <VBox spacing="20" style="-fx-padding: 20 0 0 0;">
                 <VBox spacing="15" VBox.vgrow="ALWAYS" styleClass="card">
-                    <HBox alignment="CENTER_LEFT">
-                        <Label text="System Audit Logs" styleClass="subheader-label" HBox.hgrow="ALWAYS"/>
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Audit Logs" styleClass="card-title"/>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Button text="Refresh Logs" onAction="#onRefreshLogsClick"/>
+                        <TextField fx:id="logSearchField" promptText="Filter by text/user..." prefWidth="300"/>
+                        <Button text="Refresh" onAction="#onRefreshLogsClick" styleClass="button-secondary"/>
                     </HBox>
                     <ListView fx:id="systemLogListView" VBox.vgrow="ALWAYS"/>
                 </VBox>

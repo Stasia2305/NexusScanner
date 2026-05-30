@@ -29,4 +29,12 @@ public class ProfileService {
     public void assignProfileToUser(String username, String profileName) throws SQLException {
         profileDAO.assignProfileToUser(username, profileName);
     }
+
+    public void removeProfileFromUser(String username, String profileName) throws SQLException {
+        profileDAO.removeProfileFromUser(username, profileName);
+    }
+
+    public void deleteProfile(String name) throws SQLException {
+        profileDAO.deleteProfile(name);
+    }
 }

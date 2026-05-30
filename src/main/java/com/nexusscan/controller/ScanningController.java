@@ -5,6 +5,7 @@ import com.nexusscan.service.AppState;
 import com.nexusscan.service.LoggingService;
 import com.nexusscan.service.ScanService;
 import com.nexusscan.service.DatabaseService;
+import com.nexusscan.service.strategy.*;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.embed.swing.SwingFXUtils;
@@ -56,6 +57,7 @@ public class ScanningController {
     private double globalRotation = 0;
     private boolean isQAMode = false;
     private String metadataStr = "";
+    private ISplitStrategy splitStrategy;
 
     /**
      * Prepares the scanning screen for a new session.
@@ -114,6 +116,12 @@ public class ScanningController {
 
     @FXML
     public void initialize() {
+        // Initialize splitting strategy (Composite Pattern)
+        CompositeSplitStrategy composite = new CompositeSplitStrategy();
+        composite.addStrategy(new BarcodeSplitStrategy());
+        composite.addStrategy(new FixedPageSplitStrategy());
+        this.splitStrategy = composite;
+
         // Define how documents and pages look in the sidebar list (TreeView)
         fileTreeView.setCellFactory(tv -> new TreeCell<>() {
             @Override
@@ -185,25 +193,11 @@ public class ScanningController {
     }
 
     private void handleScanResult(ScanService.ScanResult result) {
-        // Check for numeric split logic (e.g., split every N pages)
-        boolean fixedSplitTriggered = false;
-        String splitLogic = currentProfile.getSplitLogic();
-        if (splitLogic != null && !splitLogic.isEmpty()) {
-            try {
-                int interval = Integer.parseInt(splitLogic.trim());
-                if (interval > 0 && totalScans > 0 && totalScans % interval == 0 && !result.isBarcode()) {
-                    fixedSplitTriggered = true;
-                }
-            } catch (NumberFormatException e) {
-                // Not a numeric interval, ignore
-            }
-        }
-
-        // Split document if barcode detected or auto-split interval reached
-        if (result.isBarcode() || fixedSplitTriggered) {
+        // Use the Strategy Pattern to determine if a split should occur
+        if (splitStrategy.shouldSplit(result, totalScans, currentProfile.getSplitLogic())) {
             String barcodeVal = result.isBarcode() ? result.getImagePath() : "AUTO-SPLIT-" + (documents.size() + 1);
             documents.add(new Document(totalScans + 1, barcodeVal));
-            LoggingService.getInstance().log("Document split triggered", AppState.getInstance().getCurrentUsernameSafe());
+            LoggingService.getInstance().log("Document split triggered by strategy", AppState.getInstance().getCurrentUsernameSafe());
             
             if (result.isBarcode()) {
                 // Prompt user when a barcode is scanned
@@ -652,10 +646,11 @@ public class ScanningController {
                     doc.setStatus(Document.Status.QA_COMPLETED);
                 }
             }
-            saveToDatabase();
+            
+            ScanService.getInstance().exportSession(currentProfile, currentBoxId, metadataStr, documents);
+            
             String exportName = currentProfile.getName() + "_" + currentBoxId;
-            Alert info = new Alert(Alert.AlertType.INFORMATION, "Data saved to database successfully! Status marked as QA Completed. Export Name: " + exportName);
-            info.show();
+            new Alert(Alert.AlertType.INFORMATION, "Data saved to database successfully! Status marked as QA Completed. Export Name: " + exportName).show();
             refreshTreeView();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -664,125 +659,8 @@ public class ScanningController {
     }
 
     /**
-     * Saves the full hierarchy (Client -> Archive -> Box -> Case -> Document -> Page) to the database.
-     * Uses a transaction to make sure that either everything is saved or nothing is.
+     * Highlights a specific page in the sidebar list.
      */
-    private void saveToDatabase() throws SQLException {
-        DatabaseService db = DatabaseService.getInstance();
-        Connection conn = db.getConnection();
-        conn.setAutoCommit(false); // Use transaction for integrity
-
-        try {
-            int clientId = getOrCreateEntity(conn, "SELECT id FROM clients WHERE name = ?", "INSERT INTO clients (name) VALUES (?)", currentProfile.getName());
-            int archiveId = getOrCreateEntity(conn, "SELECT id FROM archives WHERE client_id = ? AND name = ?", "INSERT INTO archives (client_id, name) VALUES (?, ?)", clientId, "Main Archive");
-            int boxId = getOrCreateEntity(conn, "SELECT id FROM boxes WHERE archive_id = ? AND box_id_str = ?", "INSERT INTO boxes (archive_id, box_id_str) VALUES (?, ?)", archiveId, currentBoxId);
-            int caseId = getOrCreateEntity(conn, "SELECT id FROM cases WHERE box_id = ? AND case_number = ?", "INSERT INTO cases (box_id, case_number, metadata) VALUES (?, ?, ?)", boxId, "CASE-" + currentBoxId, metadataStr);
-
-            if (clientId == -1 || archiveId == -1 || boxId == -1 || caseId == -1) {
-                throw new SQLException("Failed to create or retrieve hierarchy entities");
-            }
-
-            // P2 Fix: Update metadata if case already existed
-            try (PreparedStatement pstmt = conn.prepareStatement("UPDATE cases SET metadata = ? WHERE id = ?")) {
-                pstmt.setString(1, metadataStr);
-                pstmt.setInt(2, caseId);
-                pstmt.executeUpdate();
-            }
-
-            // P2 Fix: Deduplicate by removing existing documents/pages for this case before re-exporting
-            // We find all documents for this case and delete their pages, then delete the documents
-            List<Integer> oldDocIds = new ArrayList<>();
-            try (PreparedStatement pstmtGetDocs = conn.prepareStatement("SELECT id FROM documents WHERE case_id = ?")) {
-                pstmtGetDocs.setInt(1, caseId);
-                try (ResultSet rs = pstmtGetDocs.executeQuery()) {
-                    while (rs.next()) {
-                        oldDocIds.add(rs.getInt(1));
-                    }
-                }
-            }
-            
-            try (PreparedStatement pstmtDelPages = conn.prepareStatement("DELETE FROM pages WHERE document_id = ?")) {
-                for (int oldDocId : oldDocIds) {
-                    pstmtDelPages.setInt(1, oldDocId);
-                    pstmtDelPages.executeUpdate();
-                }
-            }
-            
-            try (PreparedStatement pstmtDelDocs = conn.prepareStatement("DELETE FROM documents WHERE case_id = ?")) {
-                pstmtDelDocs.setInt(1, caseId);
-                pstmtDelDocs.executeUpdate();
-            }
-
-            String sqlDoc = "INSERT INTO documents (case_id, barcode, status) VALUES (?, ?, ?)";
-            String sqlPage = "INSERT INTO pages (document_id, page_number, image_data, rotation) VALUES (?, ?, ?, ?)";
-
-            try (PreparedStatement pstmtDoc = conn.prepareStatement(sqlDoc, Statement.RETURN_GENERATED_KEYS);
-                 PreparedStatement pstmtPage = conn.prepareStatement(sqlPage)) {
-                for (Document doc : documents) {
-                    if (doc.getPages().isEmpty()) continue; // Skip empty documents (P2 Fix)
-
-                    pstmtDoc.setInt(1, caseId);
-                    pstmtDoc.setString(2, doc.getBarcode());
-                    pstmtDoc.setString(3, doc.getStatus().name());
-                    pstmtDoc.executeUpdate();
-
-                    try (ResultSet rs = pstmtDoc.getGeneratedKeys()) {
-                        if (rs.next()) {
-                            int docId = rs.getInt(1);
-                            for (Page page : doc.getPages()) {
-                                pstmtPage.setInt(1, docId);
-                                pstmtPage.setInt(2, page.getPageNumber());
-                                pstmtPage.setBytes(3, page.getImageData()); // Save BLOB
-                                pstmtPage.setDouble(4, page.getRotation());
-                                pstmtPage.executeUpdate();
-                            }
-                        }
-                    }
-                }
-            }
-            conn.commit();
-            LoggingService.getInstance().log("Full hierarchy and pages saved to database. Metadata: " + metadataStr, AppState.getInstance().getCurrentUsernameSafe());
-        } catch (Exception e) {
-            conn.rollback();
-            if (e instanceof SQLException) throw (SQLException) e;
-            throw new RuntimeException("Transaction failed due to unexpected error", e);
-        } finally {
-            conn.setAutoCommit(true);
-        }
-    }
-
-    private int getOrCreateEntity(Connection conn, String selectSql, String insertSql, Object... params) throws SQLException {
-        // Try to find existing
-        try (PreparedStatement pstmt = conn.prepareStatement(selectSql)) {
-            int paramCount = countPlaceholders(selectSql);
-            for (int i = 0; i < paramCount; i++) {
-                pstmt.setObject(i + 1, params[i]);
-            }
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
-            }
-        }
-
-        // Not found, insert
-        try (PreparedStatement pstmt = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
-            for (int i = 0; i < params.length; i++) {
-                pstmt.setObject(i + 1, params[i]);
-            }
-            pstmt.executeUpdate();
-            try (ResultSet rs = pstmt.getGeneratedKeys()) {
-                if (rs.next()) return rs.getInt(1);
-            }
-        }
-        return -1;
-    }
-
-    private int countPlaceholders(String sql) {
-        int count = 0;
-        for (char c : sql.toCharArray()) {
-            if (c == '?') count++;
-        }
-        return count;
-    }
 
     /**
      * Logs out the current user and returns to the login screen.

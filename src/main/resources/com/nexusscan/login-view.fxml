@@ -20,21 +20,25 @@
         <Insets bottom="40.0" left="40.0" right="40.0" top="40.0"/>
     </padding>
 
-    <VBox spacing="15.0" alignment="CENTER" styleClass="card" maxWidth="350">
-        <Label text="NexusScan" styleClass="header-label"/>
-        <Label text="Sign in to your account" style="-fx-text-fill: #666; -fx-padding: 0 0 10 0;"/>
-        
-        <VBox spacing="5" alignment="CENTER_LEFT" maxWidth="250">
-            <Label text="Username" style="-fx-font-weight: bold;"/>
-            <TextField fx:id="usernameField" promptText="Enter your username" maxWidth="Infinity"/>
+    <VBox spacing="25.0" alignment="CENTER" styleClass="card" maxWidth="400">
+        <VBox spacing="5" alignment="CENTER">
+            <Label text="NexusScan" styleClass="header-label"/>
+            <Label text="Digital Archive Management" style="-fx-text-fill: -primary-color; -fx-font-weight: bold; -fx-font-size: 14px;"/>
         </VBox>
         
-        <VBox spacing="5" alignment="CENTER_LEFT" maxWidth="250">
-            <Label text="Password" style="-fx-font-weight: bold;"/>
-            <PasswordField fx:id="passwordField" promptText="Enter your password" maxWidth="Infinity"/>
+        <Label text="Please sign in to continue" style="-fx-text-fill: -text-muted;"/>
+        
+        <VBox spacing="8" alignment="CENTER_LEFT" maxWidth="300">
+            <Label text="Username" style="-fx-font-weight: bold; -fx-text-fill: -text-main;"/>
+            <TextField fx:id="usernameField" promptText="Your username" maxWidth="Infinity"/>
         </VBox>
         
-        <Button text="Login" onAction="#onLoginButtonClick" styleClass="button-primary" maxWidth="250" defaultButton="true"/>
+        <VBox spacing="8" alignment="CENTER_LEFT" maxWidth="300">
+            <Label text="Password" style="-fx-font-weight: bold; -fx-text-fill: -text-main;"/>
+            <PasswordField fx:id="passwordField" promptText="••••••••" maxWidth="Infinity"/>
+        </VBox>
+        
+        <Button text="Sign In" onAction="#onLoginButtonClick" styleClass="button-primary" maxWidth="300" defaultButton="true"/>
         
         <Label fx:id="errorLabel" textFill="RED" style="-fx-font-size: 12px;"/>
     </VBox>

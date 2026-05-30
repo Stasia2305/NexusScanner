@@ -129,11 +129,11 @@
             <version>5.11.0</version>
             <scope>test</scope>
         </dependency>
-        <!-- The library for the SQLite database -->
+        <!-- The library for the MSSQL database -->
         <dependency>
-            <groupId>org.xerial</groupId>
-            <artifactId>sqlite-jdbc</artifactId>
-            <version>3.45.1.0</version>
+            <groupId>com.microsoft.sqlserver</groupId>
+            <artifactId>mssql-jdbc</artifactId>
+            <version>12.6.1.jre11</version>
         </dependency>
         <!-- Fix for jackson-core DoS vulnerability -->
         <dependency>

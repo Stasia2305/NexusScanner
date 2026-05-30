@@ -8,6 +8,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
@@ -22,6 +23,7 @@ import java.sql.SQLException;
 public class UserController {
     @FXML private ComboBox<Profile> profileComboBox;
     @FXML private TextField boxIdField;
+    @FXML private Label connectionLabel;
 
     private final ProfileService profileService = new ProfileService();
 
@@ -29,6 +31,9 @@ public class UserController {
     public void initialize() {
         // Load only the profiles that the admin has assigned to this user
         String username = AppState.getInstance().getCurrentUser().getUsername();
+        if (connectionLabel != null) {
+            connectionLabel.setText("Connected as: " + username);
+        }
         try {
             profileComboBox.setItems(FXCollections.observableArrayList(profileService.getAccessibleProfiles(username)));
         } catch (SQLException e) {

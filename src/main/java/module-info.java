@@ -6,6 +6,7 @@ module com.nexusscan {
     requires java.desktop;
     requires java.net.http;
     requires java.sql;
+    requires com.microsoft.sqlserver.jdbc;
 
     requires org.controlsfx.controls;
     requires com.dlsc.formsfx;
