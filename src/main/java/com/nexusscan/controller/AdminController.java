@@ -11,22 +11,24 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+//import javafx.scene.layout.StackPane;
+//import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
+import com.nexusscan.model.MetadataField;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.HashMap;
+//import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+//import java.util.Map;
 
 /**
  * The AdminController manages the Administrative Dashboard.
  * It adheres to the Presentation Layer of the 3-layered architecture.
  */
 public class AdminController {
+    private static final String PROTECTED_ADMIN_USERNAME = "admin";
     // User Management
     @FXML private ListView<String> userListView;
     @FXML private TextField userSearchField;
@@ -60,6 +62,7 @@ public class AdminController {
     private final ProfileService profileService = new ProfileService();
     private final MetadataService metadataService = new MetadataService();
     private final LoggingService loggingService = LoggingService.getInstance();
+    private final AppState appState = AppState.getInstance();
 
     private final ObservableList<String> masterUserList = FXCollections.observableArrayList();
     private final FilteredList<String> filteredUserList = new FilteredList<>(masterUserList);
@@ -78,7 +81,7 @@ public class AdminController {
     @FXML
     public void initialize() {
         try {
-            User user = AppState.getInstance().getCurrentUser();
+            User user = appState.getCurrentUser();
             if (user == null) {
                 System.err.println("Error: No current user set in AppState for Admin");
             }
@@ -97,7 +100,8 @@ public class AdminController {
 
     private void setupListsAndFiltering() {
         if (userListView != null) userListView.setItems(filteredUserList);
-        // Custom cell factory for user list to show email
+
+        /*// Custom cell factory for user list to show email
         if (userListView != null) {
             userListView.setCellFactory(lv -> new ListCell<>() {
                 @Override
@@ -111,7 +115,8 @@ public class AdminController {
                     }
                 }
             });
-        }
+        }*/
+
         if (profileListView != null) profileListView.setItems(filteredProfileList);
         if (systemLogListView != null) systemLogListView.setItems(filteredLogList);
         if (metadataFieldListView != null) metadataFieldListView.setItems(filteredMetadataList);
@@ -169,7 +174,8 @@ public class AdminController {
             List<String> assigned = profileService.getAccessibleProfiles(username).stream().map(Profile::getName).toList();
             assignedProfilesListView.setItems(FXCollections.observableArrayList(assigned));
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Failed to load profiles:" + e.getMessage()).showAndWait();
         }
     }
 
@@ -180,10 +186,10 @@ public class AdminController {
         if (user != null && profile != null) {
             try {
                 profileService.assignProfileToUser(user, profile.getName());
-                loggingService.log("Assigned profile " + profile.getName() + " to " + user, AppState.getInstance().getCurrentUsernameSafe());
+                loggingService.log("Assigned profile " + profile.getName() + " to " + user, appState.getCurrentUsernameSafe());
                 refreshAssignedProfiles(user);
             } catch (SQLException e) {
-                new Alert(Alert.AlertType.ERROR, "Assignment failed: " + e.getMessage()).show();
+                new Alert(Alert.AlertType.ERROR, "Assignment failed: " + e.getMessage()).showAndWait();
             }
         }
     }
@@ -195,10 +201,10 @@ public class AdminController {
         if (user != null && profile != null) {
             try {
                 profileService.removeProfileFromUser(user, profile);
-                loggingService.log("Removed profile " + profile + " from " + user, AppState.getInstance().getCurrentUsernameSafe());
+                loggingService.log("Removed profile " + profile + " from " + user, appState.getCurrentUsernameSafe());
                 refreshAssignedProfiles(user);
             } catch (SQLException e) {
-                new Alert(Alert.AlertType.ERROR, "Removal failed: " + e.getMessage()).show();
+                new Alert(Alert.AlertType.ERROR, "Removal failed: " + e.getMessage()).showAndWait();
             }
         }
     }
@@ -209,17 +215,21 @@ public class AdminController {
         String email = newEmailField.getText();
         String password = newPasswordField.getText();
         User.Role role = roleComboBox.getValue();
+        if (email.isEmpty() || !email.contains("@")) {
+            new Alert(Alert.AlertType.WARNING, "Please enter a valid email address").showAndWait();
+            return;
+        }
         if (!username.isEmpty() && !password.isEmpty() && role != null) {
             try {
                 userService.registerUser(new User(username, password, email, role));
-                loggingService.log("Created user: " + username, AppState.getInstance().getCurrentUsernameSafe());
+                loggingService.log("Created user: " + username, appState.getCurrentUsernameSafe());
                 refreshUserList();
                 newUsernameField.clear();
                 newEmailField.clear();
                 newPasswordField.clear();
-                new Alert(Alert.AlertType.INFORMATION, "User registered successfully").show();
+                new Alert(Alert.AlertType.INFORMATION, "User registered successfully").showAndWait();
             } catch (SQLException e) {
-                new Alert(Alert.AlertType.ERROR, "Registration failed: " + e.getMessage()).show();
+                new Alert(Alert.AlertType.ERROR, "Registration failed: " + e.getMessage()).showAndWait();
             }
         }
     }
@@ -228,17 +238,22 @@ public class AdminController {
     private void onDeleteUserClick() {
         String selected = userListView.getSelectionModel().getSelectedItem();
         if (selected != null) {
-            if (selected.equals("admin")) {
-                new Alert(Alert.AlertType.ERROR, "Cannot delete 'admin'").show();
+            if (selected.equals(PROTECTED_ADMIN_USERNAME)) {
+                new Alert(Alert.AlertType.ERROR, "Cannot delete 'admin'").showAndWait();
                 return;
             }
-            try {
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, 
+                "Delete user '" + selected + "'? This cannot be undone.");
+                if (confirm.showAndWait().filter(r -> r == ButtonType.OK).isEmpty()) {
+                    return; // User cancelled
+                }
+                try {
                 userService.deleteUser(selected);
-                loggingService.log("Deleted user: " + selected, AppState.getInstance().getCurrentUsernameSafe());
+                loggingService.log("Deleted user: " + selected, appState.getCurrentUsernameSafe());
                 refreshUserList();
                 hideUserDetails();
             } catch (SQLException e) {
-                new Alert(Alert.AlertType.ERROR, "Deletion failed").show();
+                new Alert(Alert.AlertType.ERROR, "Deletion failed").showAndWait();
             }
         }
     }
@@ -252,13 +267,13 @@ public class AdminController {
             try {
                 Profile profile = new Profile(name, logic, null, description);
                 profileService.createProfile(profile);
-                loggingService.log("Created profile: " + name, AppState.getInstance().getCurrentUsernameSafe());
+                loggingService.log("Created profile: " + name, appState.getCurrentUsernameSafe());
                 refreshProfileList();
                 profileNameField.clear();
                 splitLogicField.clear();
                 if (profileDescriptionArea != null) profileDescriptionArea.clear();
             } catch (SQLException e) {
-                new Alert(Alert.AlertType.ERROR, "Profile creation failed").show();
+                new Alert(Alert.AlertType.ERROR, "Profile creation failed").showAndWait();
             }
         }
     }
@@ -267,12 +282,17 @@ public class AdminController {
     private void onDeleteProfileClick() {
         String selected = profileListView.getSelectionModel().getSelectedItem();
         if (selected != null) {
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, 
+                "Delete profile '" + selected + "'? This cannot be undone and will remove access for all users assigned to it.");
+                if (confirm.showAndWait().filter(r -> r == ButtonType.OK).isEmpty()) {
+                    return; // User cancelled
+                }
             try {
                 profileService.deleteProfile(selected);
-                loggingService.log("Deleted profile: " + selected, AppState.getInstance().getCurrentUsernameSafe());
+                loggingService.log("Deleted profile: " + selected, appState.getCurrentUsernameSafe());
                 refreshProfileList();
             } catch (SQLException e) {
-                new Alert(Alert.AlertType.ERROR, "Profile deletion failed").show();
+                new Alert(Alert.AlertType.ERROR, "Profile deletion failed").showAndWait();
             }
         }
     }
@@ -283,11 +303,11 @@ public class AdminController {
         if (!name.isEmpty()) {
             try {
                 metadataService.addField(name);
-                loggingService.log("Added metadata field: " + name, AppState.getInstance().getCurrentUsernameSafe());
+                loggingService.log("Added metadata field: " + name, appState.getCurrentUsernameSafe());
                 refreshMetadataFieldList();
                 newMetadataFieldName.clear();
             } catch (SQLException e) {
-                new Alert(Alert.AlertType.ERROR, "Field addition failed").show();
+                new Alert(Alert.AlertType.ERROR, "Field addition failed").showAndWait();
             }
         }
     }
@@ -298,10 +318,10 @@ public class AdminController {
         if (selected != null) {
             try {
                 metadataService.deleteField(selected);
-                loggingService.log("Deleted metadata field: " + selected, AppState.getInstance().getCurrentUsernameSafe());
+                loggingService.log("Deleted metadata field: " + selected, appState.getCurrentUsernameSafe());
                 refreshMetadataFieldList();
             } catch (SQLException e) {
-                new Alert(Alert.AlertType.ERROR, "Field deletion failed").show();
+                new Alert(Alert.AlertType.ERROR, "Field deletion failed").showAndWait();
             }
         }
     }
@@ -321,7 +341,8 @@ public class AdminController {
     private void refreshUserList() {
         try {
             masterUserList.setAll(userService.getAllUsers().stream().map(User::getUsername).toList());
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) { 
+            new Alert(Alert.AlertType.ERROR, "Failed to load users:" + e.getMessage()).showAndWait();}
     }
 
     private void refreshProfileList() {
@@ -329,18 +350,22 @@ public class AdminController {
             List<Profile> profiles = profileService.getAllProfiles();
             allProfilesObjects.setAll(profiles);
             masterProfileList.setAll(profiles.stream().map(Profile::getName).toList());
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) { 
+            new Alert(Alert.AlertType.ERROR, "Failed to load profiles:" + e.getMessage()).showAndWait();
+         }
     }
 
     private void refreshMetadataFieldList() {
         try {
-            masterMetadataList.setAll(metadataService.getAllFields().stream().map(f -> f.getFieldName()).toList());
-        } catch (SQLException e) { e.printStackTrace(); }
+            masterMetadataList.setAll(metadataService.getAllFields().stream().map(MetadataField::getFieldName).toList());
+        } catch (SQLException e) { 
+            new Alert(Alert.AlertType.ERROR, "Failed to load metadata fields:" + e.getMessage()).showAndWait();
+         }
     }
 
     @FXML
     private void onLogoutClick() throws IOException {
-        AppState.getInstance().setCurrentUser(null);
+        appState.setCurrentUser(null);
         navigateToLogin();
     }
 

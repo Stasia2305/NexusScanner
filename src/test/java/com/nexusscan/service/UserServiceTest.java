@@ -4,7 +4,7 @@ import com.nexusscan.dal.interfaces.IUserDAO;
 import com.nexusscan.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+//import org.mockito.Mockito;
 
 import java.sql.SQLException;
 

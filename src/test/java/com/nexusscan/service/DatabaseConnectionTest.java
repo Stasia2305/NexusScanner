@@ -1,6 +1,7 @@
 package com.nexusscan.service;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -11,6 +12,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * Integration test to verify that the DatabaseService correctly connects to the Microsoft SQL Server database
  * and initializes the required tables.
  */
+
+@Tag("integration")
 public class DatabaseConnectionTest {
 
     @Test
