@@ -29,7 +29,7 @@ public class UserService {
                 userDAO.addUser(new User("admin", "admin", User.Role.ADMIN));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
 

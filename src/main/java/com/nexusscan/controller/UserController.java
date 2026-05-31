@@ -8,10 +8,11 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
+//import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
@@ -28,12 +29,13 @@ public class UserController {
     @FXML private Label connectionLabel;
 
     private final ProfileService profileService = new ProfileService();
+    private final AppState appState = AppState.getInstance();
 
     @FXML
     public void initialize() {
         try {
             // Load only the profiles that the admin has assigned to this user
-            User user = AppState.getInstance().getCurrentUser();
+            User user = appState.getCurrentUser();
             if (user == null) {
                 System.err.println("Error: No current user set in AppState");
                 return;
@@ -48,7 +50,7 @@ public class UserController {
                     profileComboBox.setItems(FXCollections.observableArrayList(profileService.getAccessibleProfiles(username)));
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
+                new Alert(Alert.AlertType.ERROR, "Failed to load profiles: " + e.getMessage()).showAndWait();
             }
             
             // Use a converter to display the profile name in the dropdown
@@ -92,7 +94,7 @@ public class UserController {
             stage.setTitle("Scanning - " + profile.getName() + " - " + boxId);
             stage.setMaximized(true);
         } else {
-            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.WARNING);
+            Alert alert = new Alert(Alert.AlertType.WARNING);
             alert.setTitle("Missing Information");
             alert.setHeaderText(null);
             alert.setContentText("Please select a scanning profile and enter a Box ID.");
@@ -102,7 +104,7 @@ public class UserController {
 
     @FXML
     private void onLogoutClick() throws IOException {
-        AppState.getInstance().setCurrentUser(null);
+        appState.setCurrentUser(null);
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/nexusscan/login-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
         Stage stage = (Stage) boxIdField.getScene().getWindow();

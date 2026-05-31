@@ -4,7 +4,7 @@ import com.nexusscan.model.*;
 import com.nexusscan.service.AppState;
 import com.nexusscan.service.LoggingService;
 import com.nexusscan.service.ScanService;
-import com.nexusscan.service.DatabaseService;
+//import com.nexusscan.service.DatabaseService;
 import com.nexusscan.service.strategy.*;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -13,6 +13,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+//import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -23,11 +24,11 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+//import java.sql.Connection;
+//import java.sql.PreparedStatement;
+//import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+//import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -58,6 +59,9 @@ public class ScanningController {
     private boolean isQAMode = false;
     private String metadataStr = "";
     private ISplitStrategy splitStrategy;
+
+    private final AppState appState = AppState.getInstance();
+    private final LoggingService loggingService = LoggingService.getInstance();
 
     /**
      * Prepares the scanning screen for a new session.
@@ -186,18 +190,22 @@ public class ScanningController {
 
         scanTask.setOnFailed(e -> {
             scanButton.setDisable(false);
-            new Alert(Alert.AlertType.ERROR, "Scanning failed: " + scanTask.getException().getMessage()).show();
+            new Alert(Alert.AlertType.ERROR, "Scanning failed: " + scanTask.getException().getMessage()).showAndWait();
         });
 
         new Thread(scanTask).start();
     }
 
     private void handleScanResult(ScanService.ScanResult result) {
+        if (result == null) {
+            new Alert(Alert.AlertType.ERROR, "Scan failed: no response from scanner.").showAndWait();
+            return;
+        }
         // Use the Strategy Pattern to determine if a split should occur
         if (splitStrategy.shouldSplit(result, totalScans, currentProfile.getSplitLogic())) {
             String barcodeVal = result.isBarcode() ? result.getImagePath() : "AUTO-SPLIT-" + (documents.size() + 1);
             documents.add(new Document(totalScans + 1, barcodeVal));
-            LoggingService.getInstance().log("Document split triggered by strategy", AppState.getInstance().getCurrentUsernameSafe());
+            loggingService.log("Document split triggered by strategy", appState.getCurrentUsernameSafe());
             
             if (result.isBarcode()) {
                 // Prompt user when a barcode is scanned
@@ -254,7 +262,7 @@ public class ScanningController {
         if (documents.isEmpty()) documents.add(new Document(1, "START"));
         documents.get(documents.size() - 1).addPage(page);
         
-        LoggingService.getInstance().log("User scanned page: " + totalScans, AppState.getInstance().getCurrentUsernameSafe());
+        loggingService.log("User scanned page: " + totalScans, appState.getCurrentUsernameSafe());
     }
 
     /**
@@ -262,9 +270,9 @@ public class ScanningController {
      */
     @FXML
     private void onMetadataClick() {
-        List<MetadataField> fields = AppState.getInstance().getMetadataFields();
+        List<MetadataField> fields = appState.getMetadataFields();
         if (fields.isEmpty()) {
-            new Alert(Alert.AlertType.WARNING, "No metadata fields defined by admin.").show();
+            new Alert(Alert.AlertType.WARNING, "No metadata fields defined by admin.").showAndWait();
             return;
         }
 
@@ -306,7 +314,7 @@ public class ScanningController {
 
         dialog.showAndWait().ifPresent(results -> {
             this.metadataStr = serializeMetadata(results);
-            LoggingService.getInstance().log("Metadata updated: " + metadataStr, AppState.getInstance().getCurrentUsernameSafe());
+            loggingService.log("Metadata updated: " + metadataStr, appState.getCurrentUsernameSafe());
         });
     }
 
@@ -621,7 +629,7 @@ public class ScanningController {
                 }
             }
             if (currentFile != null) fileImageView.setRotate(rot);
-            LoggingService.getInstance().log("Global rotation set to " + rot, AppState.getInstance().getCurrentUsernameSafe());
+            loggingService.log("Global rotation set to " + rot, appState.getCurrentUsernameSafe());
         });
     }
 
@@ -632,11 +640,11 @@ public class ScanningController {
     @FXML
     private void onExportClick() {
         if (scanButton.isDisable()) {
-            new Alert(Alert.AlertType.WARNING, "Please wait for the current scan to finish.").show();
+            new Alert(Alert.AlertType.WARNING, "Please wait for the current scan to finish.").showAndWait();
             return;
         }
         if (getAllFiles().isEmpty()) {
-            new Alert(Alert.AlertType.WARNING, "Cannot export an empty session. Please scan pages first.").show();
+            new Alert(Alert.AlertType.WARNING, "Cannot export an empty session. Please scan pages first.").showAndWait();
             return;
         }
         try {
@@ -650,11 +658,11 @@ public class ScanningController {
             ScanService.getInstance().exportSession(currentProfile, currentBoxId, metadataStr, documents);
             
             String exportName = currentProfile.getName() + "_" + currentBoxId;
-            new Alert(Alert.AlertType.INFORMATION, "Data saved to database successfully! Status marked as QA Completed. Export Name: " + exportName).show();
+            new Alert(Alert.AlertType.INFORMATION, "Data saved to database successfully! Status marked as QA Completed. Export Name: " + exportName).showAndWait();
             refreshTreeView();
         } catch (SQLException e) {
-            e.printStackTrace();
-            new Alert(Alert.AlertType.ERROR, "Database Error: " + e.getMessage()).show();
+            //e.printStackTrace();
+            new Alert(Alert.AlertType.ERROR, "Database Error: " + e.getMessage()).showAndWait();
         }
     }
 
@@ -665,10 +673,10 @@ public class ScanningController {
     @FXML
     private void onBackClick() throws IOException {
         if (scanButton.isDisable()) {
-            new Alert(Alert.AlertType.WARNING, "Please wait for the current scan to finish.").show();
+            new Alert(Alert.AlertType.WARNING, "Please wait for the current scan to finish.").showAndWait();
             return;
         }
-        if (!documents.isEmpty() && totalScans > 0) {
+        /*if (!documents.isEmpty() && totalScans > 0) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setTitle("Confirm Return");
             alert.setHeaderText("Unsaved scanning session");
@@ -681,15 +689,17 @@ public class ScanningController {
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isEmpty() || result.get() == cancelBtn) {
                 return;
-            }
+            }*/
+        if (!confirmDiscardSession()) {
+            return;
         }
 
-        String fxml = AppState.getInstance().getCurrentUser().getRole() == User.Role.ADMIN ? "admin-dashboard.fxml" : "user-dashboard.fxml";
+        String fxml = appState.getCurrentUser().getRole() == User.Role.ADMIN ? "admin-dashboard.fxml" : "user-dashboard.fxml";
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/nexusscan/" + fxml));
         Scene scene = new Scene(fxmlLoader.load());
         Stage stage = (Stage) profileLabel.getScene().getWindow();
         stage.setScene(scene);
-        stage.setTitle(AppState.getInstance().getCurrentUser().getRole() == User.Role.ADMIN ? "Admin Dashboard" : "User Dashboard");
+        stage.setTitle(appState.getCurrentUser().getRole() == User.Role.ADMIN ? "Admin Dashboard" : "User Dashboard");
         stage.setMaximized(true);
         stage.setResizable(true);
     }
@@ -701,10 +711,10 @@ public class ScanningController {
     @FXML
     private void onLogoutClick() throws IOException {
         if (scanButton.isDisable()) {
-            new Alert(Alert.AlertType.WARNING, "Please wait for the current scan to finish.").show();
+            new Alert(Alert.AlertType.WARNING, "Please wait for the current scan to finish.").showAndWait();
             return;
         }
-        if (!documents.isEmpty() && totalScans > 0) {
+        /*if (!documents.isEmpty() && totalScans > 0) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setTitle("Confirm Exit");
             alert.setHeaderText("Unsaved scanning session");
@@ -717,10 +727,12 @@ public class ScanningController {
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isEmpty() || result.get() == cancelBtn) {
                 return;
-            }
+            }*/
+           if (!confirmDiscardSession()) {
+               return;
         }
 
-        AppState.getInstance().setCurrentUser(null); // P2 Fix: Clear session
+        appState.setCurrentUser(null);
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/nexusscan/login-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
         Stage stage = (Stage) profileLabel.getScene().getWindow();
@@ -729,5 +741,18 @@ public class ScanningController {
         stage.setMaximized(false);
         stage.setResizable(false);
         stage.centerOnScreen();
+    }
+
+    private boolean confirmDiscardSession() {
+        if (documents.isEmpty() || totalScans == 0) return true; // No work to lose
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirm Action");
+        alert.setHeaderText("Unsaved Scanning Session");
+        alert.setContentText("You have scanned pages that are not exported. Are you sure you want to proceed? All unsaved work will be lost.");
+        ButtonType discardBtn = new ButtonType("Discard and Proceed", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelBtn = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+        alert.getButtonTypes().setAll(discardBtn, cancelBtn);
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.isPresent() && result.get() == discardBtn;
     }
 }

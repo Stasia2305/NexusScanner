@@ -2,9 +2,11 @@ package com.nexusscan.service;
 
 import com.nexusscan.model.User;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import java.sql.SQLException;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Tag("integration")
 public class AdminLoginTest {
 
     @Test

@@ -4,6 +4,8 @@ import com.nexusscan.model.Document;
 import com.nexusscan.model.Page;
 import com.nexusscan.model.Profile;
 
+//import javafx.scene.control.Alert;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -28,7 +30,7 @@ public class ScanService {
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
-    private final String API_URL = "https://studentiffapi-production.up.railway.app/getRandomFile";
+    private static final String API_URL = "https://studentiffapi-production.up.railway.app/getRandomFile";
 
     public static class ScanResult {
         private final String imagePath;
@@ -48,7 +50,7 @@ public class ScanService {
 
     private ScanService() {}
 
-    public static ScanService getInstance() {
+    public static synchronized ScanService getInstance() {
         if (instance == null) {
             instance = new ScanService();
         }
@@ -59,6 +61,7 @@ public class ScanService {
      * Simulates scanning a single sheet of paper.
      * Fetches a random TIFF file from the remote API.
      */
+
     public ScanResult scan() {
         // Small chance of generating a barcode instead of a document
         if (random.nextInt(10) == 0) {
@@ -86,9 +89,9 @@ public class ScanService {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             Thread.currentThread().interrupt();
         }
         return null;

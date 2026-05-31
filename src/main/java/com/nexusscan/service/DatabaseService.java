@@ -126,9 +126,10 @@ public class DatabaseService {
     }
 
     private void seedAdminUser(Statement stmt) throws SQLException {
-        ResultSet rs = stmt.executeQuery("SELECT count(*) FROM users WHERE username = 'admin'");
-        if (rs.next() && rs.getInt(1) == 0) {
-            stmt.execute("INSERT INTO users (username, password, email, role) VALUES ('admin', 'admin', 'admin@nexusscan.com', 'ADMIN')");
+        try (ResultSet rs = stmt.executeQuery("SELECT count(*) FROM users WHERE username = 'admin'")) {
+            if (rs.next() && rs.getInt(1) == 0) {
+                stmt.execute("INSERT INTO users (username, password, email, role) VALUES ('admin', 'admin', 'admin@nexusscan.com', 'ADMIN')");
+            }
         }
     }
 

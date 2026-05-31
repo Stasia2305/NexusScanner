@@ -30,6 +30,7 @@ public class LoginController {
     private Label errorLabel;
 
     private final UserService userService = new UserService();
+    private final AppState appState = AppState.getInstance();
 
     @FXML
     protected void onLoginButtonClick() {
@@ -42,17 +43,17 @@ public class LoginController {
             if (authenticatedUser == null) {
                 errorLabel.setText("Invalid username or password");
             } else {
-                AppState.getInstance().setCurrentUser(authenticatedUser);
+                appState.setCurrentUser(authenticatedUser);
                 
                 // Load metadata fields into AppState for scanning
                 MetadataService metadataService = new MetadataService();
-                AppState.getInstance().setMetadataFields(metadataService.getAllFields());
+                appState.setMetadataFields(metadataService.getAllFields());
                 
                 LoggingService.getInstance().log("User logged in", username);
                 navigateToDashboard(authenticatedUser);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             errorLabel.setText("Database error during login");
         }
     }
@@ -68,7 +69,7 @@ public class LoginController {
             stage.setResizable(true);
             stage.setMaximized(true);
         } catch (IOException e) {
-            e.printStackTrace();
+           // e.printStackTrace();
             System.err.println("Failed to load FXML: " + fxmlFile);
             errorLabel.setText("Error loading dashboard");
         }
