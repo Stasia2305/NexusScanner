@@ -11,17 +11,13 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
-//import javafx.scene.layout.StackPane;
-//import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import com.nexusscan.model.MetadataField;
 
 import java.io.IOException;
 import java.sql.SQLException;
-//import java.util.HashMap;
 import java.util.List;
-//import java.util.Map;
 
 /**
  * The AdminController manages the Administrative Dashboard.
@@ -99,44 +95,21 @@ public class AdminController {
     }
 
     private void setupListsAndFiltering() {
-        if (userListView != null) userListView.setItems(filteredUserList);
+        userListView.setItems(filteredUserList);
+        profileListView.setItems(filteredProfileList);
+        systemLogListView.setItems(filteredLogList);
+        metadataFieldListView.setItems(filteredMetadataList);
+        roleComboBox.setItems(FXCollections.observableArrayList(User.Role.values()));
+        quickProfileComboBox.setItems(allProfilesObjects);
 
-        /*// Custom cell factory for user list to show email
-        if (userListView != null) {
-            userListView.setCellFactory(lv -> new ListCell<>() {
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty || item == null) {
-                        setText(null);
-                        setGraphic(null);
-                    } else {
-                        setText(item);
-                    }
-                }
-            });
-        }*/
-
-        if (profileListView != null) profileListView.setItems(filteredProfileList);
-        if (systemLogListView != null) systemLogListView.setItems(filteredLogList);
-        if (metadataFieldListView != null) metadataFieldListView.setItems(filteredMetadataList);
-        if (roleComboBox != null) roleComboBox.setItems(FXCollections.observableArrayList(User.Role.values()));
-        if (quickProfileComboBox != null) quickProfileComboBox.setItems(allProfilesObjects);
-
-        if (userSearchField != null) {
-            userSearchField.textProperty().addListener((obs, old, val) -> 
-                filteredUserList.setPredicate(u -> val == null || val.isEmpty() || u.toLowerCase().contains(val.toLowerCase())));
-        }
+        userSearchField.textProperty().addListener((obs, old, val) -> 
+            filteredUserList.setPredicate(u -> val == null || val.isEmpty() || u.toLowerCase().contains(val.toLowerCase())));
         
-        if (profileSearchField != null) {
-            profileSearchField.textProperty().addListener((obs, old, val) -> 
-                filteredProfileList.setPredicate(p -> val == null || val.isEmpty() || p.toLowerCase().contains(val.toLowerCase())));
-        }
+        profileSearchField.textProperty().addListener((obs, old, val) -> 
+            filteredProfileList.setPredicate(p -> val == null || val.isEmpty() || p.toLowerCase().contains(val.toLowerCase())));
 
-        if (logSearchField != null) {
-            logSearchField.textProperty().addListener((obs, old, val) -> 
-                filteredLogList.setPredicate(l -> val == null || val.isEmpty() || l.toLowerCase().contains(val.toLowerCase())));
-        }
+        logSearchField.textProperty().addListener((obs, old, val) -> 
+            filteredLogList.setPredicate(l -> val == null || val.isEmpty() || l.toLowerCase().contains(val.toLowerCase())));
     }
 
     private void setupSelectionListeners() {

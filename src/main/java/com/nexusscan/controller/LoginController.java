@@ -53,7 +53,6 @@ public class LoginController {
                 navigateToDashboard(authenticatedUser);
             }
         } catch (SQLException e) {
-            //e.printStackTrace();
             errorLabel.setText("Database error during login");
         }
     }
@@ -69,7 +68,6 @@ public class LoginController {
             stage.setResizable(true);
             stage.setMaximized(true);
         } catch (IOException e) {
-           // e.printStackTrace();
             System.err.println("Failed to load FXML: " + fxmlFile);
             errorLabel.setText("Error loading dashboard");
         }

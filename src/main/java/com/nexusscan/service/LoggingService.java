@@ -29,7 +29,7 @@ public class LoggingService {
         try {
             logDAO.addLog(username, action);
         } catch (SQLException e) {
-            //e.printStackTrace();
+            // Log error locally if DB fails
         }
     }
 
@@ -37,7 +37,6 @@ public class LoggingService {
         try {
             return logDAO.getRecentLogs(100);
         } catch (SQLException e) {
-            //e.printStackTrace();
             return new ArrayList<>();
         }
     }

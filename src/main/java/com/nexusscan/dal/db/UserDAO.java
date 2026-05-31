@@ -77,19 +77,6 @@ public class UserDAO implements IUserDAO {
     }
 
     @Override
-    public void updateUser(User user) throws SQLException {
-        String sql = "UPDATE users SET password = ?, email = ?, role = ? WHERE username = ?";
-        try (Connection conn = databaseService.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, user.getPassword());
-            pstmt.setString(2, user.getEmail());
-            pstmt.setString(3, user.getRole().name());
-            pstmt.setString(4, user.getUsername());
-            pstmt.executeUpdate();
-        }
-    }
-
-    @Override
     public void deleteUser(String username) throws SQLException {
         String sql = "DELETE FROM users WHERE username = ?";
         try (Connection conn = databaseService.getConnection();

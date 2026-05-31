@@ -4,8 +4,6 @@ import com.nexusscan.model.Document;
 import com.nexusscan.model.Page;
 import com.nexusscan.model.Profile;
 
-//import javafx.scene.control.Alert;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -89,9 +87,9 @@ public class ScanService {
                 }
             }
         } catch (IOException e) {
-            //e.printStackTrace();
+            // Error handling
         } catch (InterruptedException e) {
-            //e.printStackTrace();
+            // Error handling
             Thread.currentThread().interrupt();
         }
         return null;

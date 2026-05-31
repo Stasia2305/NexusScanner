@@ -1,7 +1,6 @@
 package com.nexusscan.service;
 
 import com.nexusscan.model.User;
-//import com.nexusscan.model.Profile;
 import com.nexusscan.model.MetadataField;
 
 import java.util.ArrayList;
@@ -14,7 +13,6 @@ import java.util.List;
 public class AppState {
     private static AppState instance;
     private User currentUser;
-    //private List<Profile> allProfiles = new ArrayList<>();
     private List<MetadataField> metadataFields = new ArrayList<>();
 
     private AppState() {}
@@ -37,14 +35,6 @@ public class AppState {
     public String getCurrentUsernameSafe() {
         return (currentUser != null) ? currentUser.getUsername() : "SYSTEM";
     }
-
-    //public List<Profile> getAllProfiles() {
-    //    return allProfiles;
-    //}
-
-    //public void setAllProfiles(List<Profile> allProfiles) {
-    //    this.allProfiles = allProfiles;
-    //}
 
     public List<MetadataField> getMetadataFields() {
         return metadataFields;

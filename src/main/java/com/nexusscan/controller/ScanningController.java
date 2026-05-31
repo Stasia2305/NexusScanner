@@ -4,7 +4,6 @@ import com.nexusscan.model.*;
 import com.nexusscan.service.AppState;
 import com.nexusscan.service.LoggingService;
 import com.nexusscan.service.ScanService;
-//import com.nexusscan.service.DatabaseService;
 import com.nexusscan.service.strategy.*;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -13,7 +12,6 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-//import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -24,11 +22,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-//import java.sql.Connection;
-//import java.sql.PreparedStatement;
-//import java.sql.ResultSet;
 import java.sql.SQLException;
-//import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -661,14 +655,9 @@ public class ScanningController {
             new Alert(Alert.AlertType.INFORMATION, "Data saved to database successfully! Status marked as QA Completed. Export Name: " + exportName).showAndWait();
             refreshTreeView();
         } catch (SQLException e) {
-            //e.printStackTrace();
             new Alert(Alert.AlertType.ERROR, "Database Error: " + e.getMessage()).showAndWait();
         }
     }
-
-    /**
-     * Highlights a specific page in the sidebar list.
-     */
 
     @FXML
     private void onBackClick() throws IOException {
@@ -676,20 +665,6 @@ public class ScanningController {
             new Alert(Alert.AlertType.WARNING, "Please wait for the current scan to finish.").showAndWait();
             return;
         }
-        /*if (!documents.isEmpty() && totalScans > 0) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Confirm Return");
-            alert.setHeaderText("Unsaved scanning session");
-            alert.setContentText("You have scanned pages that are not exported. Are you sure you want to go back? All unsaved work will be lost.");
-            
-            ButtonType backBtn = new ButtonType("Back and Discard", ButtonBar.ButtonData.OK_DONE);
-            ButtonType cancelBtn = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-            alert.getButtonTypes().setAll(backBtn, cancelBtn);
-            
-            Optional<ButtonType> result = alert.showAndWait();
-            if (result.isEmpty() || result.get() == cancelBtn) {
-                return;
-            }*/
         if (!confirmDiscardSession()) {
             return;
         }
@@ -714,20 +689,6 @@ public class ScanningController {
             new Alert(Alert.AlertType.WARNING, "Please wait for the current scan to finish.").showAndWait();
             return;
         }
-        /*if (!documents.isEmpty() && totalScans > 0) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Confirm Exit");
-            alert.setHeaderText("Unsaved scanning session");
-            alert.setContentText("You have scanned pages that are not exported. Are you sure you want to exit? All unsaved work will be lost.");
-            
-            ButtonType exitBtn = new ButtonType("Exit and Discard", ButtonBar.ButtonData.OK_DONE);
-            ButtonType cancelBtn = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-            alert.getButtonTypes().setAll(exitBtn, cancelBtn);
-            
-            Optional<ButtonType> result = alert.showAndWait();
-            if (result.isEmpty() || result.get() == cancelBtn) {
-                return;
-            }*/
            if (!confirmDiscardSession()) {
                return;
         }

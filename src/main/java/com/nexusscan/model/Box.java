@@ -1,8 +1,5 @@
 package com.nexusscan.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * A Box is a physical container that holds multiple scanning cases.
  * It is part of the organization: Client -> Archive -> Box -> Case.
@@ -10,7 +7,6 @@ import java.util.List;
 public class Box {
     private int id;
     private String boxId;
-    private List<Case> cases = new ArrayList<>();
 
     public Box(int id, String boxId) {
         this.id = id;
@@ -19,5 +15,4 @@ public class Box {
 
     public int getId() { return id; }
     public String getBoxId() { return boxId; }
-    public List<Case> getCases() { return cases; }
 }
