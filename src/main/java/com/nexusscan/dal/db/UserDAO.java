@@ -2,7 +2,7 @@ package com.nexusscan.dal.db;
 
 import com.nexusscan.dal.interfaces.IUserDAO;
 import com.nexusscan.model.User;
-import com.nexusscan.service.DatabaseService;
+import com.nexusscan.dal.DatabaseService;
 
 import java.sql.*;
 import java.util.ArrayList;

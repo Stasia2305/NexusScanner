@@ -101,8 +101,7 @@
                         <!-- To run the app, use the command: mvn clean javafx:run -->
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>com.nexusscan/com.nexusscan.Launcher
-                            </mainClass>
+                            <mainClass>com.nexusscan/com.nexusscan.Launcher</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>

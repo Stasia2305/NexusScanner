@@ -3,10 +3,12 @@ package com.nexusscan.dal;
 import com.nexusscan.dal.db.LogDAO;
 import com.nexusscan.dal.db.MetadataDAO;
 import com.nexusscan.dal.db.ProfileDAO;
+import com.nexusscan.dal.db.SessionDAO;
 import com.nexusscan.dal.db.UserDAO;
 import com.nexusscan.dal.interfaces.ILogDAO;
 import com.nexusscan.dal.interfaces.IMetadataDAO;
 import com.nexusscan.dal.interfaces.IProfileDAO;
+import com.nexusscan.dal.interfaces.ISessionDAO;
 import com.nexusscan.dal.interfaces.IUserDAO;
 
 /**
@@ -29,5 +31,9 @@ public class DAOFactory {
 
     public static ILogDAO getLogDAO() {
         return new LogDAO();
+    }
+
+    public static ISessionDAO getSessionDAO() {
+        return new SessionDAO();
     }
 }

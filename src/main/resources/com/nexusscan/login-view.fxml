@@ -9,7 +9,7 @@
 <?import java.net.URL?>
 
 <VBox alignment="CENTER" spacing="20.0" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.nexusscan.controller.LoginController"
+      fx:controller="com.nexusscan.presentation.LoginController"
       style="-fx-background-color: #f0f2f5;"
       prefWidth="500" prefHeight="450">
     <stylesheets>
