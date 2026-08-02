@@ -25,6 +25,11 @@ public class MetadataDAO implements IMetadataDAO {
             while (rs.next()) {
                 fields.add(new MetadataField(rs.getInt("id"), rs.getString("field_name")));
             }
+        } catch (SQLException e) {
+            // Fallback for offline mode
+            fields.add(new MetadataField(1, "Case ID"));
+            fields.add(new MetadataField(2, "Client Name"));
+            fields.add(new MetadataField(3, "Document Type"));
         }
         return fields;
     }
