@@ -24,6 +24,10 @@ public class UserDAO implements IUserDAO {
         }
     }
 
+    /**
+     * Retrieves a user by their username.
+     * Includes fallback logic for 'admin' and 'user' accounts if the database is offline.
+     */
     @Override
     public User getUser(String username) throws SQLException {
         String sql = "SELECT * FROM users WHERE username = ?";
@@ -41,7 +45,7 @@ public class UserDAO implements IUserDAO {
                 }
             }
         } catch (SQLException e) {
-            // Fallback for offline/demo mode
+            // Fallback for offline/demo mode: allow access with default credentials
             if ("admin".equals(username)) {
                 return new User("admin", "admin", "admin@nexusscan.com", User.Role.ADMIN);
             }
@@ -53,6 +57,10 @@ public class UserDAO implements IUserDAO {
         return null;
     }
 
+    /**
+     * Retrieves a list of all users from the database.
+     * Falls back to returning the default 'admin' and 'user' accounts in offline mode.
+     */
     @Override
     public List<User> getAllUsers() throws SQLException {
         List<User> users = new ArrayList<>();
@@ -69,7 +77,7 @@ public class UserDAO implements IUserDAO {
                 ));
             }
         } catch (SQLException e) {
-            // Fallback for offline mode
+            // Fallback for offline mode: provide the default system accounts
             users.add(new User("admin", "admin", "admin@nexusscan.com", User.Role.ADMIN));
             users.add(new User("user", "user", "user@nexusscan.com", User.Role.USER));
         }

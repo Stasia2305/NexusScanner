@@ -17,6 +17,10 @@ public class ProfileDAO implements IProfileDAO {
         this.databaseService = DatabaseService.getInstance();
     }
 
+    /**
+     * Retrieves all scanning profiles from the database.
+     * Falls back to a default profile if the database is unavailable.
+     */
     @Override
     public List<Profile> getAllProfiles() throws SQLException {
         List<Profile> profiles = new ArrayList<>();
@@ -33,12 +37,15 @@ public class ProfileDAO implements IProfileDAO {
                 ));
             }
         } catch (SQLException e) {
-            // Fallback for offline mode
+            // Fallback for offline mode: provide a standard scanning configuration
             profiles.add(getDefaultProfile());
         }
         return profiles;
     }
 
+    /**
+     * Creates a hardcoded default profile for use in offline mode.
+     */
     private Profile getDefaultProfile() {
         Map<String, String> settings = new HashMap<>();
         settings.put("rotation", "0");
@@ -69,6 +76,10 @@ public class ProfileDAO implements IProfileDAO {
         }
     }
 
+    /**
+     * Retrieves all profiles assigned to a specific user.
+     * In offline mode, both 'admin' and 'user' are assigned the default profile.
+     */
     @Override
     public List<Profile> getUserProfiles(String username) throws SQLException {
         List<Profile> profiles = new ArrayList<>();
@@ -89,7 +100,7 @@ public class ProfileDAO implements IProfileDAO {
                 }
             }
         } catch (SQLException e) {
-            // Fallback for offline mode
+            // Fallback for offline mode: assign the default profile to system accounts
             if ("admin".equals(username) || "user".equals(username)) {
                 profiles.add(getDefaultProfile());
             }

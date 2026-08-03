@@ -19,14 +19,15 @@ public class NexusScanApplication extends Application {
      */
     @Override
     public void start(Stage stage) {
-        // Initialize database structure - non-fatal
+        // Initialize the database connection. 
+        // A short timeout is used to ensure the app starts quickly even if the server is offline.
         try {
             DatabaseService.getInstance();
         } catch (Exception e) {
-            System.err.println("Database initialization failed (continuing to UI): " + e.getMessage());
+            System.err.println("Database initialization failed (continuing in Offline Mode): " + e.getMessage());
         }
 
-        // Load the login screen design from the FXML file
+        // Load the initial login screen from the FXML resource
         try {
             var resource = getClass().getResource("/com/nexusscan/login-view.fxml");
             if (resource == null) {
@@ -35,16 +36,16 @@ public class NexusScanApplication extends Application {
             FXMLLoader fxmlLoader = new FXMLLoader(resource);
             Scene scene = new Scene(fxmlLoader.load());
 
-            // Configure the window properties
+            // Configure the main window (Stage)
             stage.setTitle("NexusScan - Login");
             stage.setScene(scene);
             stage.setResizable(false);
             stage.centerOnScreen();
 
-            // Show the window to the user
+            // Display the UI to the user
             stage.show();
         } catch (Exception e) {
-            System.err.println("CRITICAL ERROR: Failed to load application UI.");
+            System.err.println("CRITICAL ERROR: Failed to load application UI. The FXML file may be missing or corrupted.");
             e.printStackTrace();
             System.exit(1);
         }

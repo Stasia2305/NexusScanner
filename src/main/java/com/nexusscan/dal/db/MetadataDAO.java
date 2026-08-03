@@ -15,6 +15,10 @@ public class MetadataDAO implements IMetadataDAO {
         this.databaseService = DatabaseService.getInstance();
     }
 
+    /**
+     * Retrieves all defined metadata fields.
+     * Provides default fields (Case ID, Client Name, Document Type) in offline mode.
+     */
     @Override
     public List<MetadataField> getAllFields() throws SQLException {
         List<MetadataField> fields = new ArrayList<>();
@@ -26,7 +30,7 @@ public class MetadataDAO implements IMetadataDAO {
                 fields.add(new MetadataField(rs.getInt("id"), rs.getString("field_name")));
             }
         } catch (SQLException e) {
-            // Fallback for offline mode
+            // Fallback for offline mode: ensure the UI has basic fields to work with
             fields.add(new MetadataField(1, "Case ID"));
             fields.add(new MetadataField(2, "Client Name"));
             fields.add(new MetadataField(3, "Document Type"));
