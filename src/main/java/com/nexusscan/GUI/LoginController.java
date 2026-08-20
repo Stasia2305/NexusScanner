@@ -1,4 +1,4 @@
-package com.nexusscan.presentation;
+package com.nexusscan.GUI;
 
 import com.nexusscan.model.User;
 import com.nexusscan.logic.AppState;
@@ -32,6 +32,11 @@ public class LoginController {
     private final UserService userService = new UserService();
     private final AppState appState = AppState.getInstance();
 
+    /**
+     * Handles the login action when the login button is clicked. Authenticates the credentials,
+     * seeds initial metadata into AppState, logs the action, and redirects the user
+     * to the appropriate dashboard based on their role.
+     */
     @FXML
     protected void onLoginButtonClick() {
         String username = usernameField.getText();
@@ -57,6 +62,11 @@ public class LoginController {
         }
     }
 
+    /**
+     * Navigates the application to the respective user or admin dashboard.
+     *
+     * @param user The authenticated user to navigate for.
+     */
     private void navigateToDashboard(User user) {
         String fxmlFile = user.getRole() == User.Role.ADMIN ? "admin-dashboard.fxml" : "user-dashboard.fxml";
         try {

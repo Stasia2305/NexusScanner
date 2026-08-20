@@ -22,15 +22,56 @@ public class Document {
     private Status status = Status.IN_PROGRESS;
     private List<Page> pages = new ArrayList<>();
 
+    /**
+     * Constructs a new Document with the specified ID and barcode.
+     *
+     * @param id      The unique identifier for the document.
+     * @param barcode The barcode associated with this document.
+     */
     public Document(int id, String barcode) {
         this.id = id;
         this.barcode = barcode;
     }
 
+    /**
+     * Gets the database ID of the document.
+     *
+     * @return The unique identifier of the document.
+     */
     public int getId() { return id; }
+
+    /**
+     * Gets the barcode of the document.
+     *
+     * @return The barcode string.
+     */
     public String getBarcode() { return barcode; }
+
+    /**
+     * Gets the current status of the document.
+     *
+     * @return The status enum value.
+     */
     public Status getStatus() { return status; }
+
+    /**
+     * Sets the status of the document.
+     *
+     * @param status The new status to set.
+     */
     public void setStatus(Status status) { this.status = status; }
+
+    /**
+     * Gets the list of pages in the document.
+     *
+     * @return A list of Page objects.
+     */
     public List<Page> getPages() { return pages; }
+
+    /**
+     * Adds a scanned page to this document.
+     *
+     * @param page The Page object to add.
+     */
     public void addPage(Page page) { this.pages.add(page); }
 }

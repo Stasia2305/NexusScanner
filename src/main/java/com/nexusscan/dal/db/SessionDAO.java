@@ -10,13 +10,29 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * SQL Server implementation for exporting and managing scanning sessions.
+ */
 public class SessionDAO implements ISessionDAO {
     private final DatabaseService databaseService;
 
+    /**
+     * Constructs a new SessionDAO and obtains the database service instance.
+     */
     public SessionDAO() {
         this.databaseService = DatabaseService.getInstance();
     }
 
+    /**
+     * Exports a scanning session consisting of profiles, boxes, cases, documents, and pages
+     * to the database in a single transaction.
+     *
+     * @param profile      The profile used for scanning.
+     * @param boxIdStr     The identifier for the physical box.
+     * @param metadataStr  Serialized metadata for the session.
+     * @param documents    The list of documents and pages to save.
+     * @throws SQLException If a database error occurs, triggering a transaction rollback.
+     */
     @Override
     public void exportSession(Profile profile, String boxIdStr, String metadataStr, List<Document> documents) throws SQLException {
         try (Connection conn = databaseService.getConnection()) {
@@ -54,6 +70,13 @@ public class SessionDAO implements ISessionDAO {
         }
     }
 
+    /**
+     * Clears existing documents and pages associated with a specific case ID to avoid duplicates.
+     *
+     * @param conn   The database connection.
+     * @param caseId The ID of the case to clean up.
+     * @throws SQLException If a database error occurs.
+     */
     private void clearExistingCaseData(Connection conn, int caseId) throws SQLException {
         List<Integer> oldDocIds = new ArrayList<>();
         try (PreparedStatement pstmt = conn.prepareStatement("SELECT id FROM documents WHERE case_id = ?")) {
@@ -78,6 +101,14 @@ public class SessionDAO implements ISessionDAO {
         }
     }
 
+    /**
+     * Inserts documents and their nested page entities into the database under a specific case ID.
+     *
+     * @param conn      The database connection.
+     * @param caseId    The ID of the case.
+     * @param documents The list of documents to insert.
+     * @throws SQLException If a database error occurs.
+     */
     private void insertDocumentsAndPages(Connection conn, int caseId, List<Document> documents) throws SQLException {
         String sqlDoc = "INSERT INTO documents (case_id, barcode, status) VALUES (?, ?, ?)";
         String sqlPage = "INSERT INTO pages (document_id, page_number, image_data, rotation) VALUES (?, ?, ?, ?)";
@@ -108,6 +139,16 @@ public class SessionDAO implements ISessionDAO {
         }
     }
 
+    /**
+     * Retrieves an existing entity's ID, or inserts a new one if not found.
+     *
+     * @param conn      The database connection.
+     * @param selectSql The SQL query used to find the entity.
+     * @param insertSql The SQL query used to insert the entity.
+     * @param params    Parameters for the SQL statements.
+     * @return The ID of the retrieved or newly created entity, or -1 if failure.
+     * @throws SQLException If a database error occurs.
+     */
     private int getOrCreateEntity(Connection conn, String selectSql, String insertSql, Object... params) throws SQLException {
         try (PreparedStatement pstmt = conn.prepareStatement(selectSql)) {
             for (int i = 0; i < countPlaceholders(selectSql); i++) {
@@ -130,6 +171,12 @@ public class SessionDAO implements ISessionDAO {
         return -1;
     }
 
+    /**
+     * Counts the number of placeholder '?' characters in a SQL string.
+     *
+     * @param sql The target SQL query.
+     * @return The count of placeholders.
+     */
     private int countPlaceholders(String sql) {
         int count = 0;
         for (char c : sql.toCharArray()) {

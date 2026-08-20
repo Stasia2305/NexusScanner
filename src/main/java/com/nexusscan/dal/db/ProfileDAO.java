@@ -10,9 +10,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * SQL Server implementation for managing scanning profiles and user associations.
+ */
 public class ProfileDAO implements IProfileDAO {
     private final DatabaseService databaseService;
 
+    /**
+     * Constructs a new ProfileDAO and obtains the database service instance.
+     */
     public ProfileDAO() {
         this.databaseService = DatabaseService.getInstance();
     }
@@ -20,6 +26,9 @@ public class ProfileDAO implements IProfileDAO {
     /**
      * Retrieves all scanning profiles from the database.
      * Falls back to a default profile if the database is unavailable.
+     *
+     * @return A list of Profile objects.
+     * @throws SQLException If database execution fails (and not intercepted by fallback).
      */
     @Override
     public List<Profile> getAllProfiles() throws SQLException {
@@ -45,6 +54,8 @@ public class ProfileDAO implements IProfileDAO {
 
     /**
      * Creates a hardcoded default profile for use in offline mode.
+     *
+     * @return A default Profile object.
      */
     private Profile getDefaultProfile() {
         Map<String, String> settings = new HashMap<>();
@@ -53,6 +64,12 @@ public class ProfileDAO implements IProfileDAO {
         return new Profile("Default Profile", "Default Profile", settings, "Standard scanning configuration");
     }
 
+    /**
+     * Adds a new scanning profile to the database.
+     *
+     * @param profile The Profile object to add.
+     * @throws SQLException If database execution fails.
+     */
     @Override
     public void addProfile(Profile profile) throws SQLException {
         String sql = "INSERT INTO profiles (name, split_logic, settings, description) VALUES (?, ?, ?, ?)";
@@ -66,6 +83,12 @@ public class ProfileDAO implements IProfileDAO {
         }
     }
 
+    /**
+     * Deletes a scanning profile from the database by name.
+     *
+     * @param name The name of the profile to delete.
+     * @throws SQLException If database execution fails.
+     */
     @Override
     public void deleteProfile(String name) throws SQLException {
         String sql = "DELETE FROM profiles WHERE name = ?";
@@ -79,6 +102,10 @@ public class ProfileDAO implements IProfileDAO {
     /**
      * Retrieves all profiles assigned to a specific user.
      * In offline mode, both 'admin' and 'user' are assigned the default profile.
+     *
+     * @param username The username of the user.
+     * @return A list of Profile objects assigned to that user.
+     * @throws SQLException If database execution fails (and not intercepted by fallback).
      */
     @Override
     public List<Profile> getUserProfiles(String username) throws SQLException {
@@ -108,6 +135,13 @@ public class ProfileDAO implements IProfileDAO {
         return profiles;
     }
 
+    /**
+     * Assigns a scanning profile to a user.
+     *
+     * @param username    The username of the user.
+     * @param profileName The name of the profile to assign.
+     * @throws SQLException If database execution fails.
+     */
     @Override
     public void assignProfileToUser(String username, String profileName) throws SQLException {
         String sql = "IF NOT EXISTS (SELECT 1 FROM user_profiles WHERE username = ? AND profile_id = (SELECT id FROM profiles WHERE name = ?)) " +
@@ -123,6 +157,13 @@ public class ProfileDAO implements IProfileDAO {
         }
     }
 
+    /**
+     * Removes an assigned scanning profile from a user.
+     *
+     * @param username    The username of the user.
+     * @param profileName The name of the profile to remove.
+     * @throws SQLException If database execution fails.
+     */
     @Override
     public void removeProfileFromUser(String username, String profileName) throws SQLException {
         String sql = "DELETE FROM user_profiles WHERE username = ? AND " +
@@ -135,6 +176,12 @@ public class ProfileDAO implements IProfileDAO {
         }
     }
 
+    /**
+     * Serializes a settings map into a semicolon-separated key-value string.
+     *
+     * @param map The map of settings to serialize.
+     * @return The serialized settings string.
+     */
     private String serializeSettings(Map<String, String> map) {
         if (map == null || map.isEmpty()) return "";
         StringBuilder sb = new StringBuilder();
@@ -142,6 +189,12 @@ public class ProfileDAO implements IProfileDAO {
         return sb.toString();
     }
 
+    /**
+     * Parses a semicolon-separated key-value string into a settings map.
+     *
+     * @param s The serialized settings string to parse.
+     * @return A map containing key-value setting pairs.
+     */
     private Map<String, String> parseSettings(String s) {
         Map<String, String> map = new HashMap<>();
         if (s == null || s.isEmpty()) return map;
@@ -155,10 +208,22 @@ public class ProfileDAO implements IProfileDAO {
         return map;
     }
 
+    /**
+     * Escapes special delimiter characters (';' and '=') in settings.
+     *
+     * @param s The string to escape.
+     * @return The escaped string.
+     */
     private String escape(String s) {
         return (s == null) ? "" : s.replace(";", "%3B").replace("=", "%3D");
     }
 
+    /**
+     * Unescapes special delimiter characters (';' and '=') in settings.
+     *
+     * @param s The string to unescape.
+     * @return The unescaped string.
+     */
     private String unescape(String s) {
         return (s == null) ? "" : s.replace("%3B", ";").replace("%3D", "=");
     }

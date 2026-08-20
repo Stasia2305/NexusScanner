@@ -3,7 +3,6 @@ package com.nexusscan.logic;
 import com.nexusscan.dal.DAOFactory;
 import com.nexusscan.dal.interfaces.ISessionDAO;
 import com.nexusscan.model.Document;
-import com.nexusscan.model.Page;
 import com.nexusscan.model.Profile;
 
 import java.io.ByteArrayInputStream;
@@ -34,26 +33,61 @@ public class ScanService {
     private static final String API_URL = "https://studentiffapi-production.up.railway.app/getRandomFile";
     private final ISessionDAO sessionDAO;
 
+    /**
+     * Inner class representing the output of a single page scan.
+     */
     public static class ScanResult {
         private final String imagePath;
         private final boolean isBarcode; // True if the result represents a document separator
         private final byte[] data; // Raw TIFF image data
 
+        /**
+         * Constructs a new ScanResult.
+         *
+         * @param imagePath The path or URL of the scanned image.
+         * @param isBarcode True if this scan result represents a barcode separator.
+         * @param data      The raw byte data of the scanned TIFF file.
+         */
         public ScanResult(String imagePath, boolean isBarcode, byte[] data) {
             this.imagePath = imagePath;
             this.isBarcode = isBarcode;
             this.data = data;
         }
 
+        /**
+         * Gets the path to the scanned image.
+         *
+         * @return The image path or URL.
+         */
         public String getImagePath() { return imagePath; }
+
+        /**
+         * Indicates whether the scan is a barcode separator.
+         *
+         * @return True if barcode, false if normal page.
+         */
         public boolean isBarcode() { return isBarcode; }
+
+        /**
+         * Gets the raw byte data of the scan.
+         *
+         * @return Raw image data byte array.
+         */
         public byte[] getData() { return data; }
     }
 
+    /**
+     * Private constructor for singleton pattern.
+     */
     private ScanService() {
         this.sessionDAO = DAOFactory.getSessionDAO();
     }
 
+    /**
+     * Gets the Singleton instance of ScanService.
+     *
+     * @return The ScanService instance.
+     */
     public static synchronized ScanService getInstance() {
         if (instance == null) {
             instance = new ScanService();
@@ -64,6 +98,8 @@ public class ScanService {
     /**
      * Simulates scanning a single sheet of paper by fetching a random TIFF file
      * or generating a barcode from the remote API.
+     *
+     * @return A ScanResult representing the scanned page, or null if scanning failed.
      */
     public ScanResult scan() {
         // Small chance of generating a barcode instead of a document
@@ -92,14 +128,23 @@ public class ScanService {
                 }
             }
         } catch (IOException e) {
-            // Error handling
+            System.err.println("IOException during scanning simulation: " + e.getMessage());
         } catch (InterruptedException e) {
-            // Error handling
+            System.err.println("Scanning simulation thread was interrupted.");
             Thread.currentThread().interrupt();
         }
         return null;
     }
 
+    /**
+     * Exports a scanning session to the database.
+     *
+     * @param profile     The profile used for scanning.
+     * @param boxIdStr    The identifier for the physical box.
+     * @param metadataStr Serialized metadata for the session.
+     * @param documents   The list of documents and pages to save.
+     * @throws SQLException If database execution fails.
+     */
     public void exportSession(Profile profile, String boxIdStr, String metadataStr, List<Document> documents) throws SQLException {
         sessionDAO.exportSession(profile, boxIdStr, metadataStr, documents);
     }

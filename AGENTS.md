@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 NexusScan is a JavaFX application organized into a standard layered architecture under the `com.nexusscan` package:
-- **`com.nexusscan.presentation`**: Contains JavaFX controllers that manage the UI logic for views.
+- **`com.nexusscan.GUI`**: Contains JavaFX controllers that manage the UI logic for views.
 - **`com.nexusscan.model`**: Defines the data entities (e.g., `User`, `Archive`, `Box`, `Document`).
 - **`com.nexusscan.logic`**: Implements business logic and data access, including `DatabaseService` for Microsoft SQL Server interaction and `AppState` for global state management.
 - **`src/main/resources/com/nexusscan`**: Contains FXML files defining the application's user interface layouts.

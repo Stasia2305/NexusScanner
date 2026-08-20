@@ -8,13 +8,25 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * SQL Server implementation for managing user accounts and roles.
+ */
 public class UserDAO implements IUserDAO {
     private final DatabaseService databaseService;
 
+    /**
+     * Constructs a new UserDAO and obtains the database service instance.
+     */
     public UserDAO() {
         this.databaseService = DatabaseService.getInstance();
     }
 
+    /**
+     * Parses a string representation of a user role into the User.Role enum.
+     *
+     * @param roleStr The string representing the role.
+     * @return The parsed Role, defaulting to Role.USER if invalid or null.
+     */
     private User.Role parseRole(String roleStr) {
         if (roleStr == null) return User.Role.USER;
         try {
@@ -27,6 +39,10 @@ public class UserDAO implements IUserDAO {
     /**
      * Retrieves a user by their username.
      * Includes fallback logic for 'admin' and 'user' accounts if the database is offline.
+     *
+     * @param username The username of the user to look up.
+     * @return The User object if found/fallback, or null.
+     * @throws SQLException If database execution fails (and not intercepted by fallback).
      */
     @Override
     public User getUser(String username) throws SQLException {
@@ -60,6 +76,9 @@ public class UserDAO implements IUserDAO {
     /**
      * Retrieves a list of all users from the database.
      * Falls back to returning the default 'admin' and 'user' accounts in offline mode.
+     *
+     * @return A list of User objects.
+     * @throws SQLException If database execution fails (and not intercepted by fallback).
      */
     @Override
     public List<User> getAllUsers() throws SQLException {
@@ -84,6 +103,12 @@ public class UserDAO implements IUserDAO {
         return users;
     }
 
+    /**
+     * Adds a new user account.
+     *
+     * @param user The User object containing new user details.
+     * @throws SQLException If database execution fails.
+     */
     @Override
     public void addUser(User user) throws SQLException {
         String sql = "INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)";
@@ -97,6 +122,12 @@ public class UserDAO implements IUserDAO {
         }
     }
 
+    /**
+     * Deletes a user account by username.
+     *
+     * @param username The username of the account to delete.
+     * @throws SQLException If database execution fails.
+     */
     @Override
     public void deleteUser(String username) throws SQLException {
         String sql = "DELETE FROM users WHERE username = ?";

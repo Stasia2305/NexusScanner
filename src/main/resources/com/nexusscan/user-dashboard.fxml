@@ -6,7 +6,7 @@
 <?import java.net.URL?>
 
 <VBox alignment="TOP_CENTER" spacing="30.0" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.nexusscan.presentation.UserController"
+      fx:controller="com.nexusscan.GUI.UserController"
       style="-fx-background-color: #f8fafc;">
     <stylesheets>
         <URL value="@style.css" />

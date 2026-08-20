@@ -33,8 +33,7 @@ public class DatabaseService {
                 tempUser = props.getProperty("db.user");
                 tempPass = props.getProperty("db.password");
                 
-                // Set a short login timeout (5s) to prevent the application from hanging
-                // if the school server (10.176.111.34) is unreachable.
+                // Set login timeout (5s) to avoid long hangs if server is unreachable
                 DriverManager.setLoginTimeout(5);
             } else {
                 System.err.println("WARNING: Could not find db.properties.");
@@ -49,27 +48,25 @@ public class DatabaseService {
 
         if (this.url != null) {
             try {
-                // Ensure the NexusScan database exists on the server
+                // Initialize database and tables
                 ensureDatabaseExists();
-                // Initialize the table structure for Clients, Archives, Boxes, etc.
                 createTables();
                 seedData();
             } catch (SQLException e) {
-                System.err.println("WARNING: Could not initialize database connection: " + e.getMessage());
-                // Mark connection as failed to enable offline fallback mode
-                connectionFailed = true;
+                System.err.println("WARNING: Could not initialize database: " + e.getMessage());
+                connectionFailed = true; // Switch to offline mode
             }
         } else {
-            System.err.println("WARNING: Database configuration missing. Database features will be unavailable.");
+            System.err.println("WARNING: Database configuration missing. Using offline mode.");
             connectionFailed = true;
         }
     }
 
     /**
-     * Verifies if the target database exists; attempts to create it if it doesn't.
+     * Attempts to create the NexusScan database if it does not already exist.
      */
     private void ensureDatabaseExists() throws SQLException {
-        // Connect to the base server to check for/create the NexusScan database
+        // Strip databaseName from URL to connect to the server root
         String baseUrl = url.replaceAll(";databaseName=[^;]*", "");
         try (Connection conn = (user != null && password != null) ? 
                 DriverManager.getConnection(baseUrl, user, password) : 
@@ -78,12 +75,14 @@ public class DatabaseService {
                 stmt.execute("IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'NexusScan') CREATE DATABASE NexusScan");
             }
         } catch (SQLException e) {
-            // Failure here is often due to permissions; we continue and let getConnection() handle specifics
+            // Permissions might prevent database creation; we attempt to proceed regardless
         }
     }
 
     /**
      * Provides the global instance of the DatabaseService.
+     *
+     * @return The Singleton instance of DatabaseService.
      */
     public static synchronized DatabaseService getInstance() {
         if (instance == null) {
@@ -93,36 +92,41 @@ public class DatabaseService {
     }
 
     /**
-     * Attempts to establish a connection to the MSSQL database.
-     * If the database is unreachable, it throws an exception to trigger offline fallbacks.
+     * Establishes and returns a new connection to the MSSQL database.
+     * 
+     * @return A SQL Connection object.
+     * @throws SQLException If the connection fails or if in offline mode.
      */
     public Connection getConnection() throws SQLException {
         if (url == null || connectionFailed) {
             throw new SQLException("Database connection not available (Offline Mode).");
         }
-        Connection conn;
+        
         try {
-            if (user != null && password != null) {
-                conn = DriverManager.getConnection(url, user, password);
-            } else {
-                conn = DriverManager.getConnection(url);
-            }
+            Connection conn = (user != null && password != null) ? 
+                    DriverManager.getConnection(url, user, password) : 
+                    DriverManager.getConnection(url);
             
-            // Explicitly ensure we are working within the NexusScan context
+            // Ensure we use the correct database context
             try (Statement stmt = conn.createStatement()) {
                 stmt.execute("USE NexusScan");
             } catch (SQLException e) {
-                // Ignore if USE fails; databaseName is typically handled in the JDBC URL
+                // Ignore if USE fails; database name is usually in the URL
             }
             
             return conn;
         } catch (SQLException e) {
-            // Permanently mark connection as failed for this session to avoid repeated timeouts
-            connectionFailed = true;
+            connectionFailed = true; // Avoid repeated timeouts
             throw e;
         }
     }
 
+    /**
+     * Creates required tables if they do not already exist in the database.
+     * Also performs any necessary schema migrations.
+     *
+     * @throws SQLException If table creation fails.
+     */
     private void createTables() throws SQLException {
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
             // Core data tables
@@ -148,18 +152,40 @@ public class DatabaseService {
         }
     }
 
+    /**
+     * Helper method to ensure a column exists in a table, adding it if missing.
+     *
+     * @param stmt       The database Statement to execute.
+     * @param tableName  The name of the target table.
+     * @param columnName The name of the column to verify/add.
+     * @param type       The SQL type of the column.
+     * @throws SQLException If SQL execution fails.
+     */
     private void ensureColumnExists(Statement stmt, String tableName, String columnName, String type) throws SQLException {
         String sql = String.format("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('%s') AND name = '%s') " +
                                     "ALTER TABLE %s ADD %s %s", tableName, columnName, tableName, columnName, type);
         stmt.execute(sql);
     }
 
+    /**
+     * Helper method to create a table if it does not already exist.
+     *
+     * @param stmt      The database Statement to execute.
+     * @param tableName The name of the table to create.
+     * @param columns   The column definitions SQL string.
+     * @throws SQLException If table creation fails.
+     */
     private void createTableIfNotExists(Statement stmt, String tableName, String columns) throws SQLException {
         String sql = String.format("IF OBJECT_ID('%s', 'U') IS NULL CREATE TABLE %s (%s)", 
                                     tableName, tableName, columns);
         stmt.execute(sql);
     }
 
+    /**
+     * Seeds initial static and default data into the database.
+     *
+     * @throws SQLException If seeding fails.
+     */
     private void seedData() throws SQLException {
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
             seedAdminUser(stmt);
@@ -169,6 +195,12 @@ public class DatabaseService {
         }
     }
 
+    /**
+     * Seeds the default admin user if no users exist with the 'admin' username.
+     *
+     * @param stmt The database Statement to execute.
+     * @throws SQLException If database execution fails.
+     */
     private void seedAdminUser(Statement stmt) throws SQLException {
         try (ResultSet rs = stmt.executeQuery("SELECT count(*) FROM users WHERE username = 'admin'")) {
             if (rs.next() && rs.getInt(1) == 0) {
@@ -177,6 +209,12 @@ public class DatabaseService {
         }
     }
 
+    /**
+     * Seeds default metadata fields if they do not exist.
+     *
+     * @param conn The database Connection to use.
+     * @throws SQLException If database execution fails.
+     */
     private void seedMetadataFields(Connection conn) throws SQLException {
         String[] defaultFields = {"Case ID", "Client Name", "Document Type"};
         String sql = "IF NOT EXISTS (SELECT 1 FROM metadata_fields WHERE field_name = ?) " +
@@ -190,6 +228,12 @@ public class DatabaseService {
         }
     }
 
+    /**
+     * Seeds the default scanning profile if it does not exist.
+     *
+     * @param conn The database Connection to use.
+     * @throws SQLException If database execution fails.
+     */
     private void seedDefaultProfile(Connection conn) throws SQLException {
         String sql = "IF NOT EXISTS (SELECT 1 FROM profiles WHERE name = ?) " +
                      "INSERT INTO profiles (name, split_logic, settings, description) VALUES (?, ?, ?, ?)";
@@ -203,6 +247,12 @@ public class DatabaseService {
         }
     }
 
+    /**
+     * Assigns the default scanning profile to the 'admin' user if not already assigned.
+     *
+     * @param stmt The database Statement to execute.
+     * @throws SQLException If database execution fails.
+     */
     private void assignDefaultProfileToAdmin(Statement stmt) throws SQLException {
         String sql = "IF NOT EXISTS (SELECT 1 FROM user_profiles WHERE username = 'admin' AND " +
                      "profile_id = (SELECT id FROM profiles WHERE name = 'Default Profile')) " +

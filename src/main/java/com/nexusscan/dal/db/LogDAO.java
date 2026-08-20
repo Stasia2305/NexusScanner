@@ -7,13 +7,26 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * SQL Server implementation for logging audit and system actions.
+ */
 public class LogDAO implements ILogDAO {
     private final DatabaseService databaseService;
 
+    /**
+     * Constructs a new LogDAO and obtains the database service instance.
+     */
     public LogDAO() {
         this.databaseService = DatabaseService.getInstance();
     }
 
+    /**
+     * Adds an action log entry to the database.
+     *
+     * @param username The username of the user who performed the action.
+     * @param action   A description of the action performed.
+     * @throws SQLException If a database error occurs.
+     */
     @Override
     public void addLog(String username, String action) throws SQLException {
         String sql = "INSERT INTO logs (username, action) VALUES (?, ?)";
@@ -25,6 +38,13 @@ public class LogDAO implements ILogDAO {
         }
     }
 
+    /**
+     * Retrieves the most recent log entries up to a specified limit.
+     *
+     * @param limit The maximum number of log entries to retrieve.
+     * @return A list of log descriptions.
+     * @throws SQLException If a database error occurs.
+     */
     @Override
     public List<String> getRecentLogs(int limit) throws SQLException {
         List<String> logs = new ArrayList<>();

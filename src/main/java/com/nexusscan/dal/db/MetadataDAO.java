@@ -8,9 +8,15 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * SQL Server implementation for managing metadata fields.
+ */
 public class MetadataDAO implements IMetadataDAO {
     private final DatabaseService databaseService;
 
+    /**
+     * Constructs a new MetadataDAO and obtains the database service instance.
+     */
     public MetadataDAO() {
         this.databaseService = DatabaseService.getInstance();
     }
@@ -18,6 +24,9 @@ public class MetadataDAO implements IMetadataDAO {
     /**
      * Retrieves all defined metadata fields.
      * Provides default fields (Case ID, Client Name, Document Type) in offline mode.
+     *
+     * @return A list of MetadataField objects.
+     * @throws SQLException If database execution fails.
      */
     @Override
     public List<MetadataField> getAllFields() throws SQLException {
@@ -38,6 +47,12 @@ public class MetadataDAO implements IMetadataDAO {
         return fields;
     }
 
+    /**
+     * Adds a new metadata field definition.
+     *
+     * @param name The name of the new metadata field.
+     * @throws SQLException If database execution fails.
+     */
     @Override
     public void addField(String name) throws SQLException {
         String sql = "INSERT INTO metadata_fields (field_name) VALUES (?)";
@@ -48,6 +63,12 @@ public class MetadataDAO implements IMetadataDAO {
         }
     }
 
+    /**
+     * Deletes a metadata field definition.
+     *
+     * @param name The name of the metadata field to delete.
+     * @throws SQLException If database execution fails.
+     */
     @Override
     public void deleteField(String name) throws SQLException {
         String sql = "DELETE FROM metadata_fields WHERE field_name = ?";

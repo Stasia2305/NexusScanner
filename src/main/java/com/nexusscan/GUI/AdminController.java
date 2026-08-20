@@ -1,4 +1,4 @@
-package com.nexusscan.presentation;
+package com.nexusscan.GUI;
 
 import com.nexusscan.model.Profile;
 import com.nexusscan.model.User;
@@ -27,6 +27,7 @@ import java.util.List;
 public class AdminController {
     private static final String PROTECTED_ADMIN_USERNAME = "admin";
     // User Management
+    @FXML private Label adminLabel;
     @FXML private ListView<String> userListView;
     @FXML private TextField userSearchField;
     @FXML private HBox userDetailsBox;
@@ -75,12 +76,19 @@ public class AdminController {
     private final ObservableList<String> masterMetadataList = FXCollections.observableArrayList();
     private final FilteredList<String> filteredMetadataList = new FilteredList<>(masterMetadataList);
 
+    /**
+     * Initializes the Admin Controller. Verifies the admin user session,
+     * configures lists, filtering, selection listeners, converters,
+     * and triggers a refresh of all administrative data.
+     */
     @FXML
     public void initialize() {
         try {
             User user = appState.getCurrentUser();
             if (user == null) {
                 System.err.println("Error: No current user set in AppState for Admin");
+            } else if (adminLabel != null) {
+                adminLabel.setText(user.getUsername());
             }
             
             setupListsAndFiltering();
@@ -95,6 +103,10 @@ public class AdminController {
         }
     }
 
+    /**
+     * Configures the master and filtered lists for users, profiles, logs, and metadata fields.
+     * Also binds search text fields to update predicates on the filtered lists.
+     */
     private void setupListsAndFiltering() {
         userListView.setItems(filteredUserList);
         profileListView.setItems(filteredProfileList);
@@ -113,6 +125,9 @@ public class AdminController {
             filteredLogList.setPredicate(l -> val == null || val.isEmpty() || l.toLowerCase().contains(val.toLowerCase())));
     }
 
+    /**
+     * Registers selection event listeners for user list selections to show respective details.
+     */
     private void setupSelectionListeners() {
         userListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
@@ -123,6 +138,9 @@ public class AdminController {
         });
     }
 
+    /**
+     * Sets up UI string converters for rendering Profile objects in combo boxes.
+     */
     private void setupConverters() {
         quickProfileComboBox.setConverter(new StringConverter<>() {
             @Override public String toString(Profile p) { return p == null ? "" : p.getName(); }
@@ -130,6 +148,11 @@ public class AdminController {
         });
     }
 
+    /**
+     * Displays administrative user details, enabling controls and refreshing assigned profiles.
+     *
+     * @param username The username of the selected user.
+     */
     private void showUserDetails(String username) {
         selectedUserLabel.setText(username);
         userDetailsBox.setDisable(false);
@@ -137,12 +160,20 @@ public class AdminController {
         refreshAssignedProfiles(username);
     }
 
+    /**
+     * Hides administrative user details, disabling and clearing assignment lists.
+     */
     private void hideUserDetails() {
         userDetailsBox.setDisable(true);
         userDetailsBox.setVisible(false);
         assignedProfilesListView.getItems().clear();
     }
 
+    /**
+     * Refreshes the list of scanning profiles assigned to the specified user.
+     *
+     * @param username The username of the user.
+     */
     private void refreshAssignedProfiles(String username) {
         try {
             List<String> assigned = profileService.getAccessibleProfiles(username).stream().map(Profile::getName).toList();
@@ -153,6 +184,9 @@ public class AdminController {
         }
     }
 
+    /**
+     * Handles assign action, binding the selected profile to the selected user.
+     */
     @FXML
     private void onQuickAssignClick() {
         String user = userListView.getSelectionModel().getSelectedItem();
@@ -168,6 +202,9 @@ public class AdminController {
         }
     }
 
+    /**
+     * Handles remove assignment action, unbinding the selected profile assignment from the user.
+     */
     @FXML
     private void onRemoveAssignmentClick() {
         String user = userListView.getSelectionModel().getSelectedItem();
@@ -183,6 +220,9 @@ public class AdminController {
         }
     }
 
+    /**
+     * Handles administrative action to register a new system user.
+     */
     @FXML
     private void onAddUserClick() {
         String username = newUsernameField.getText();
@@ -208,6 +248,9 @@ public class AdminController {
         }
     }
 
+    /**
+     * Handles administrative action to delete a system user account.
+     */
     @FXML
     private void onDeleteUserClick() {
         String selected = userListView.getSelectionModel().getSelectedItem();
@@ -232,6 +275,9 @@ public class AdminController {
         }
     }
 
+    /**
+     * Handles administrative action to add a new scanning profile.
+     */
     @FXML
     private void onAddProfileClick() {
         String name = profileNameField.getText();
@@ -252,6 +298,9 @@ public class AdminController {
         }
     }
 
+    /**
+     * Handles administrative action to delete a scanning profile.
+     */
     @FXML
     private void onDeleteProfileClick() {
         String selected = profileListView.getSelectionModel().getSelectedItem();
@@ -271,6 +320,9 @@ public class AdminController {
         }
     }
 
+    /**
+     * Handles administrative action to add a new metadata field definition.
+     */
     @FXML
     private void onAddMetadataFieldClick() {
         String name = newMetadataFieldName.getText();
@@ -286,6 +338,9 @@ public class AdminController {
         }
     }
 
+    /**
+     * Handles administrative action to delete a metadata field definition.
+     */
     @FXML
     private void onDeleteMetadataFieldClick() {
         String selected = metadataFieldListView.getSelectionModel().getSelectedItem();
@@ -300,11 +355,17 @@ public class AdminController {
         }
     }
 
+    /**
+     * Refreshes the logs list in the view.
+     */
     @FXML
     private void onRefreshLogsClick() {
         masterLogList.setAll(loggingService.getRecentLogs());
     }
 
+    /**
+     * Refreshes all data in the view (users, profiles, fields, logs).
+     */
     private void refreshAllData() {
         refreshUserList();
         refreshProfileList();
@@ -312,6 +373,9 @@ public class AdminController {
         onRefreshLogsClick();
     }
 
+    /**
+     * Pulls the user list from the database service and refreshes the view.
+     */
     private void refreshUserList() {
         try {
             masterUserList.setAll(userService.getAllUsers().stream().map(User::getUsername).toList());
@@ -319,6 +383,9 @@ public class AdminController {
             new Alert(Alert.AlertType.ERROR, "Failed to load users:" + e.getMessage()).showAndWait();}
     }
 
+    /**
+     * Pulls the scanning profiles list from the database service and refreshes the view.
+     */
     private void refreshProfileList() {
         try {
             List<Profile> profiles = profileService.getAllProfiles();
@@ -329,6 +396,9 @@ public class AdminController {
          }
     }
 
+    /**
+     * Pulls the metadata fields list from the database service and refreshes the view.
+     */
     private void refreshMetadataFieldList() {
         try {
             masterMetadataList.setAll(metadataService.getAllFields().stream().map(MetadataField::getFieldName).toList());
@@ -337,12 +407,22 @@ public class AdminController {
          }
     }
 
+    /**
+     * Performs logout and redirects the application session back to the Login screen.
+     *
+     * @throws IOException If FXML loading fails.
+     */
     @FXML
     private void onLogoutClick() throws IOException {
         appState.setCurrentUser(null);
         navigateToLogin();
     }
 
+    /**
+     * Helper method to perform the login page redirection.
+     *
+     * @throws IOException If FXML loading fails.
+     */
     private void navigateToLogin() throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/nexusscan/login-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());

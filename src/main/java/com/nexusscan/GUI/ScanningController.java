@@ -1,4 +1,4 @@
-package com.nexusscan.presentation;
+package com.nexusscan.GUI;
 
 import com.nexusscan.model.*;
 import com.nexusscan.logic.AppState;
@@ -29,8 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 
@@ -42,6 +42,7 @@ import javafx.scene.layout.StackPane;
 public class ScanningController {
     @FXML private Label profileLabel;
     @FXML private Label boxLabel;
+    @FXML private Label userLabel;
     @FXML private Label totalScansLabel;
     @FXML private TreeView<Object> fileTreeView;
     @FXML private StackPane imageContainer;
@@ -74,6 +75,10 @@ public class ScanningController {
         this.currentBoxId = boxId;
         profileLabel.setText("Profile: " + profile.getName());
         boxLabel.setText("Box: " + boxId);
+        
+        if (userLabel != null) {
+            userLabel.setText(appState.getCurrentUsernameSafe());
+        }
         
         // Initialize with a starting document
         documents.add(new Document(1, "START"));
@@ -120,6 +125,11 @@ public class ScanningController {
         });
     }
 
+    /**
+     * Initializes the scanning controller.
+     * Sets up the splitting strategy, zoom/pan image interactions,
+     * cell factory for the TreeView, and tree selection listener.
+     */
     @FXML
     public void initialize() {
         // Initialize splitting strategy (Only Barcode)
@@ -196,6 +206,9 @@ public class ScanningController {
         imageContainer.setClip(clip);
     }
 
+    /**
+     * Resets the zoom scale and translate positioning coordinates of the image view.
+     */
     private void resetZoomAndPan() {
         fileImageView.setScaleX(1.0);
         fileImageView.setScaleY(1.0);
@@ -242,6 +255,12 @@ public class ScanningController {
         new Thread(scanTask).start();
     }
 
+    /**
+     * Handles the scan result by checking if a split is required via the strategy pattern,
+     * and processes the page or prompts user on barcode split.
+     *
+     * @param result The ScanResult containing image data and metadata.
+     */
     private void handleScanResult(ScanService.ScanResult result) {
         if (result == null) {
             new Alert(Alert.AlertType.ERROR, "Scan failed: no response from scanner.").showAndWait();
@@ -608,6 +627,11 @@ public class ScanningController {
         }
     }
 
+    /**
+     * Restores the selection of a document or page in the TreeView.
+     *
+     * @param value The item value whose selection to restore.
+     */
     private void restoreSelection(Object value) {
         for (TreeItem<Object> docItem : fileTreeView.getRoot().getChildren()) {
             if (docItem.getValue().equals(value)) {

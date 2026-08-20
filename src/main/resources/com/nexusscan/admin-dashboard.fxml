@@ -6,7 +6,7 @@
 <?import java.net.URL?>
 
 <VBox spacing="20.0" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.nexusscan.presentation.AdminController"
+      fx:controller="com.nexusscan.GUI.AdminController"
       style="-fx-background-color: #f8fafc;">
     <stylesheets>
         <URL value="@style.css" />
@@ -24,7 +24,7 @@
         <Region HBox.hgrow="ALWAYS"/>
         <HBox spacing="15" alignment="CENTER_RIGHT">
             <VBox alignment="CENTER_RIGHT">
-                <Label text="admin" style="-fx-font-weight: bold; -fx-font-size: 13px;"/>
+                <Label fx:id="adminLabel" text="admin" style="-fx-font-weight: bold; -fx-font-size: 13px;"/>
                 <Label text="Administrator" style="-fx-text-fill: -text-muted; -fx-font-size: 11px;"/>
             </VBox>
             <Button text="Logout" onAction="#onLogoutClick" styleClass="button-danger"/>

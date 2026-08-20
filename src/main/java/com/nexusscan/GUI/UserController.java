@@ -1,4 +1,4 @@
-package com.nexusscan.presentation;
+package com.nexusscan.GUI;
 
 import com.nexusscan.model.Profile;
 import com.nexusscan.model.User;
@@ -30,6 +30,10 @@ public class UserController {
     private final ProfileService profileService = new ProfileService();
     private final AppState appState = AppState.getInstance();
 
+    /**
+     * Initializes the user controller. Sets up connection label, loads profiles assigned
+     * to the user, and configures the profiles ComboBox selection converter.
+     */
     @FXML
     public void initialize() {
         try {
@@ -75,6 +79,8 @@ public class UserController {
 
     /**
      * Opens the scanning workspace using the selected profile and Box ID.
+     *
+     * @throws IOException If FXML loading fails.
      */
     @FXML
     private void onStartScanningClick() throws IOException {
@@ -101,6 +107,12 @@ public class UserController {
         }
     }
 
+    /**
+     * Handles the logout action, clears the user session in AppState,
+     * and returns to the login screen.
+     *
+     * @throws IOException If FXML loading fails.
+     */
     @FXML
     private void onLogoutClick() throws IOException {
         appState.setCurrentUser(null);
